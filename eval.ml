@@ -1,7 +1,3 @@
-(* CS 4110 Homework 3
-   This is the file where you'll do your work. Your job is to take an AST
-   (which has already been parsed for you) and execute it. *)
-
 open Ast
 
 (* Interpreter exceptions. *)
@@ -10,16 +6,28 @@ exception IllegalContinue
 exception TestFailure of string
 exception UnboundVariable of var
 
+
 (* A type for stores. 
    Invariant: [breaks] >= 0*)
-type store = {vars: (var * int) list; breaks: int} 
+type store = {vars: (var * int) list; funs: (var * com) list ; breaks: int} 
 
 (** A type for configurations. ⟨𝜎, 𝑐, 𝑐′, 𝜅⟩ *)
 type configuration = store * com * com  * com list
 
 (* Create an initial configuration from a command. *)
 let make_configuration (c:com) : configuration =
-  ({vars=[]; breaks=0}, c, Skip, [])
+  ({vars=[]; funs=[]; breaks=0}, c, Skip, [])
+
+let rec len = function
+  | VEmpty -> 0
+  | VCons(_, t) -> 1 + len t
+
+let rec nth n ls = 
+  match ls, n with
+  | _, n' when (n'<0) -> Skip
+  | VEmpty, n -> Skip
+  | VCons(h, _), 0 -> h
+  | VCons(_, t), n -> nth (n-1) t
 
 (* Evaluate a command. *)
 let rec evalc ((st, com1, com2, com_list):configuration) : store = 
@@ -65,6 +73,17 @@ let rec evalc ((st, com1, com2, com_list):configuration) : store =
   | Print aexp, next_com -> 
     string_of_int (evala aexp st) |> print_endline; 
     evalc (st, next_com, Skip, com_list)
+  | Match(lst, c1, c2), next_com -> begin
+      match lst with 
+      | VEmpty -> evalc (st, c1, next_com, com_list)
+      | VCons(h, t) -> evalc (st, c2, next_com, com_list)
+    end
+  | Switch (lst, aexp), next_com -> begin
+      match lst, evala aexp st with
+      | VEmpty, _ -> evalc (st, Skip, next_com, com_list)
+      | m, n when n >= 0 && n < len m -> evalc(st, nth n m, next_com, com_list)
+      | _ -> failwith "oop"
+    end
 
 and print_info (info:info) : unit =
   match info with

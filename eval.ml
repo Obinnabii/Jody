@@ -18,17 +18,6 @@ type configuration = store * com * com  * com list
 let make_configuration (c:com) : configuration =
   ({vars=[]; funs=[]; breaks=0}, c, Skip, [])
 
-let rec len = function
-  | VEmpty -> 0
-  | VCons(_, t) -> 1 + len t
-
-let rec nth n ls = 
-  match ls, n with
-  | _, n' when (n'<0) -> Skip
-  | VEmpty, n -> Skip
-  | VCons(h, _), 0 -> h
-  | VCons(_, t), n -> nth (n-1) t
-
 (* Evaluate a command. *)
 let rec evalc ((st, com1, com2, com_list):configuration) : store = 
   match com1, com2 with
@@ -84,6 +73,17 @@ let rec evalc ((st, com1, com2, com_list):configuration) : store =
       | m, n when n >= 0 && n < len m -> evalc(st, nth n m, next_com, com_list)
       | _ -> failwith "oop"
     end
+
+and len = function
+  | VEmpty -> 0
+  | VCons(_, t) -> 1 + len t
+
+and nth n ls = 
+  match ls, n with
+  | _, n' when (n'<0) -> Skip
+  | VEmpty, n -> Skip
+  | VCons(h, _), 0 -> h
+  | VCons(_, t), n -> nth (n-1) t
 
 and print_info (info:info) : unit =
   match info with

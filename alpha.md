@@ -4,9 +4,9 @@ We are currently trying to create a basic programming language with optional fun
 ### Status: What’s the status of your current prototype? Showing some test cases or a screenshot might be helpful.
 We have a basic implementation that is based on IMP. Our addition to the IMP language was a __lst__ data type for lists of commands and a __match__ and __switch__ function. we were not able to test our implementation yet. We are currently working on getting the parser and lexer to recognize this data type.
 
-![AST!](../aplha.png "AST")
+![AST!](/alpha.png "AST")
 
-![Eval!](../aplha_eval.png "Eval")
+![Eval!](/alpha_eval.png "Eval")
 
 ### Next steps: What do you plan to do next?
 Get the parser and lexer working then get closures running.

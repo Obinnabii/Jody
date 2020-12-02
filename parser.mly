@@ -1,81 +1,197 @@
+(******************************************************************************
+   You do not need to modify anything in this file.
+ ******************************************************************************)
+
+(* Acknowledgement:  this parser is adapted from the OCaml 4.04 parser
+ *  [https://github.com/ocaml/ocaml/blob/trunk/parsing/parser.mly],
+ *  written by Xavier Leroy, projet Cristal, INRIA Rocquencourt
+ *  and distributed under the GNU Lesser General Public License version 2.1. *)
+
 %{
 open Ast
-open Printf
-open Lexing
+open Ast_factory
 
-let merge (fn,pos1,_) (_,_,pos2) = (fn,pos1,pos2)
+let has_dups lst =
+  let open List in
+  length lst <> length (sort_uniq Stdlib.compare lst)
 %}
 
-%token <Ast.info * int> INT
-%token <Ast.info * string> VAR
-%token <Ast.info> PLUS MINUS TIMES
-  LPAREN RPAREN TRUE FALSE
-  EQUALS NOTEQUALS LESS LESSEQ GREATER GREATEREQ
-  NOT AND OR
-  SKIP ASSIGN SEMI IF THEN ELSE WHILE DO
-  LBRACE RBRACE
-  BREAK CONTINUE TEST INPUT PRINT
+%token <string> INT
+%token <string> ID STRING
+%token PLUS MINUS TIMES DIV MOD AND OR
+       LT LEQ GT GEQ EQUAL NOTEQUAL EQUALEQUAL NOTEQUALEQUAL
+       NOT TYPEOF
+%token LPAREN RPAREN SEMI DOUBLE_SEMI ARROW DEREF ASSIGN UPDATE LBRACE RBRACE
+       COLON COMMA LBRACKET RBRACKET DOT
+%token TRUE FALSE UNDEFINED
+%token LET IN IF THEN ELSE BEGIN END THROW TRY CATCH HANDLE FINALLY FUN REF
+       WHILE DO DONE DELETE REC DYN
 %token EOF
 
-%type <Ast.aexp> a
-%type <Ast.bexp> b
-%type <Ast.com> c
-%type <Ast.com> p
+(* The entries commented out below are unnecessary, but indicate
+   the correct place in the precedence table for those tokens
+   should they ever become necessary. *)
 
-%start p
+(* %nonassoc IN *)
+%nonassoc below_SEMI
+%nonassoc SEMI
+(* %nonassoc LET *)
+(* %nonassoc CATCH *)
+%nonassoc HANDLE
+%nonassoc FINALLY
+%nonassoc THEN
+%nonassoc ELSE
+%right ASSIGN UPDATE
+(* %right ARROW *)
+%right OR
+%right AND
+%left EQUAL NOTEQUAL EQUALEQUAL NOTEQUALEQUAL LT LEQ GT GEQ
+%left PLUS MINUS
+%left TIMES DIV MOD
+%nonassoc NOT TYPEOF DEREF 
+(* %nonassoc DOT *)
+(* %nonassoc BEGIN FALSE LPAREN TRUE UNDEFINED *)
+
+%start <Ast.expr> parse_expression
+%start <Ast.phrase> parse_phrase
 
 %%
 
-/* Arithmetic Expressions */
-a : a PLUS ta             { Plus($1, $3) }
-  | a MINUS ta            { Minus($1, $3) }
-  | ta                    { $1 }
+parse_expression:
+  | e = seq_expr; EOF
+        { e }
 
-ta : ta TIMES aa          { Times($1, $3) }
-   | aa                   { $1 }
+parse_phrase:
+	| e = seq_expr; DOUBLE_SEMI?; EOF
+		{ Expr e }
+  | d = defn; DOUBLE_SEMI?; EOF
+        { Defn d }
+  | DOUBLE_SEMI?; EOF
+        { raise End_of_file }
+	;
 
-aa : INT                  { Int(snd $1) }
-   | VAR                  { Var(snd $1) }
-   | LPAREN a RPAREN      { $2 }
-   | INPUT                { Input }
+defn:
+  | LET; x = ID; EQUAL; e = expr
+        { make_let_defn x e }
+  | LET; REC; f = ID; LPAREN; xs = nonempty_list(ident); RPAREN; EQUAL; e = expr
+        { make_let_rec_defn f xs e }
+  | LET; DYN; f = ID; LPAREN; xs = nonempty_list(ident); RPAREN; EQUAL; e = expr
+        { make_let_dyn_defn f xs e }
+  ;
 
-/* Boolean Expressions */
-b : a EQUALS a            { Equals($1, $3) }
-  | a NOTEQUALS a         { NotEquals ($1, $3) }
-  | a LESS a              { Less($1, $3) }
-  | a LESSEQ a            { LessEq($1, $3) }
-  | a GREATER a           { Greater($1, $3) }
-  | a GREATEREQ a         { GreaterEq($1, $3) }
-  | db                    { $1 }
+seq_expr:
+  | e = expr; %prec below_SEMI
+        { e }
+  | e = expr; SEMI
+        { e }
+  | e = expr; SEMI; s = seq_expr;
+        { make_seq e s }
 
-db: db OR cb              { Or($1, $3) }
-  | cb                    { $1 }
+expr:
+  | e = simple_expr
+        { e }
+  | e = simple_expr; es = nonempty_list(simple_expr)
+        { make_app e es }
+  | uop = unop; e = expr
+        { make_unop uop e }
+  | e1 = expr; bop = binop; e2 = expr
+        { make_binop bop e1 e2 }
+  | e1 = simple_expr; LBRACKET e2 = expr; RBRACKET; UPDATE; e3 = expr
+        { make_binop BopUpdate (make_get_field e1 e2) e3 }
+  | e1 = simple_expr; DOT x2 = ID; UPDATE; e3 = expr
+        { make_binop BopUpdate (make_get_field e1 (make_string x2)) e3 }
+  /* | e1 = expr; AND; e2 = expr
+		{ make_and e1 e2 }
+  | e1 = expr; OR; e2 = expr
+		{ make_or e1 e2 } */
+  | IF; e1 = seq_expr; THEN; e2 = expr; ELSE; e3 = expr
+        { make_if e1 e2 e3 }
+  | IF; e1 = seq_expr; THEN; e2 = expr
+        { make_if_partial e1 e2 }
+  | LET; x = ID; EQUAL; e1 = expr; IN; e2 = seq_expr
+		{ make_let x e1 e2 }
+  | LET; REC; f = ID; LPAREN; xs = nonempty_list(ident); RPAREN; EQUAL; 
+    e1 = expr; IN; e2 = seq_expr
+		{ make_let_rec f xs e1 e2 }
+  | LET; DYN; f = ID; LPAREN; xs = nonempty_list(ident); RPAREN; EQUAL; 
+    e1 = expr; IN; e2 = seq_expr
+		{ make_let_dyn f xs e1 e2 }
+  | TRY; e1 = seq_expr; CATCH; x = ID; HANDLE; e2 = seq_expr
+        { make_try e1 x e2 }
+  | TRY; e1 = seq_expr; CATCH; x = ID; HANDLE; e2 = seq_expr; 
+    FINALLY; e3 = seq_expr
+        { make_try_finally e1 x e2 e3 }
+  | THROW; e = simple_expr
+        { make_throw e}
+  | REF; e = simple_expr
+        { make_ref e }
+  | FUN; LPAREN; xs = nonempty_list(ident); RPAREN; ARROW; e = seq_expr
+        { if has_dups xs
+          then $syntaxerror (* duplicate argument names *)
+          else make_fun xs e }
+  | WHILE; e1 = seq_expr; DO; e2 = seq_expr; DONE
+        { make_while e1 e2 }
+  | DELETE e1 = simple_expr; LBRACKET; e2 = expr; RBRACKET
+        { make_delete_field e1 e2 }
+  | DELETE e = simple_expr; DOT; x = ident
+        { make_delete_field e (make_string x) }
+	;
 
-cb: cb AND nb             { And($1, $3) }
-  | nb                    { $1 }
+simple_expr:
+  | x = ident
+        { make_var x }
+  | LPAREN; e = seq_expr; RPAREN
+        { e }
+  | BEGIN; e = seq_expr; END
+        { e }
+  | s = INT
+		{ make_int s }
+  | s = STRING
+		{ make_string s }
+  | TRUE
+		{ make_bool true }
+  | FALSE
+		{ make_bool false }
+  | UNDEFINED
+		{ make_undefined () }
+  | LBRACE; fields = separated_list(COMMA, field_bind); RBRACE
+        { if fields |> List.map fst |> has_dups
+          then $syntaxerror (* duplicate fields *)
+          else make_object fields }
+  | e1 = simple_expr; LBRACKET e2 = expr; RBRACKET 
+        { make_get_field e1 e2 }
+  | e1 = simple_expr; DOT; x = ident
+        { make_get_field e1 (make_string x) }
+              
+field_bind:
+  | f = STRING; COLON; e = expr
+        { (f, e) }
 
-nb: NOT ab                { Not($2) }
-  | ab                    { $1 }
+ident:
+  | x = ID
+        { x }
 
-ab : TRUE                 { True }
-   | FALSE                { False }
-   | LPAREN b RPAREN      { $2 }
+%inline unop:
+  | MINUS { UopMinus }
+  | NOT { UopNot }
+  | TYPEOF { UopTypeof }
+  | DEREF { UopDeref }
 
-/* Commands */
-c : ic SEMI c             { Seq($1, $3) }
-  | ic                    { $1 }
-
-ic: IF b THEN ac ELSE ac  { If($2, $4, $6) }
-  | WHILE b DO ac         { While($2, $4) }
-  | ac                    { $1 }
-
-ac: SKIP                  { Skip }
-  | VAR ASSIGN a          { Assign(snd $1, $3) }
-  | LBRACE c RBRACE       { $2 }
-  | PRINT a               { Print $2 }
-  | TEST b                { Test($1, $2) }
-  | BREAK                 { Break }
-  | CONTINUE              { Continue }
-
-/* Programs */
-p : c EOF                 { $1 }
+%inline binop:
+  | PLUS { BopPlus }
+  | MINUS { BopMinus }
+  | TIMES { BopTimes }
+  | DIV { BopDiv }
+  | MOD { BopMod }
+  | LT { BopLt }
+  | LEQ { BopLeq }
+  | GT { BopGt }
+  | GEQ { BopGeq }
+  | EQUAL { BopEq }
+  | NOTEQUAL { BopNeq }
+  | EQUALEQUAL { BopEqStrict }
+  | NOTEQUALEQUAL { BopNeqStrict }
+  | ASSIGN { BopAssign }
+  | OR {BopOr}
+  | AND {BopAnd}
+  ;

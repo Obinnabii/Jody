@@ -1,20 +1,25 @@
-(* CS 4110 Homework 3
-   The top-level entry point for running our interpreter. You shouldn't need
-   to change this file; instead, change the interpreter itself in eval.ml. *)
+(******************************************************************************
+   You do not need to modify anything in this file.
+ ******************************************************************************)
 
-(* Main function. *)
-let () =
-  let _ =
-    if Array.length Sys.argv <> 2 then
-      (Printf.printf "Usage: imp <file>\n";
-       exit 0) in
-  let filename = Sys.argv.(1) in
-  let lexbuf = Lexing.from_channel (open_in filename) in
-  let c =
-    try Parser.p Lexer.token lexbuf
-    with Parsing.Parse_error ->
-      Printf.printf "Syntax error at line %d character %d\n"
-        !Lexer.lineno
-        (Lexing.lexeme_end lexbuf - !Lexer.linestart - 1);
-      exit 1 in
-  ignore (Eval.evalc (Eval.make_configuration c))
+open Ast
+open Eval
+
+let interp_expr s =
+  try
+    s
+    |> Parse.parse_expr
+    |> Eval.eval_expr_init
+    |> (fun (r, _) -> string_of_result r)
+  with
+    Parse.SyntaxError s | Failure s -> s
+
+let interp_phrase (s, env, st) =
+  try
+    s
+    |> Parse.parse_phrase
+    |> (fun p -> Eval.eval_phrase (p, env, st))
+    |> (fun (r, env', st') -> (string_of_result r, env', st'))
+  with
+    | Parse.SyntaxError s | Failure s -> (s, env, st)
+    | End_of_file -> ("", env, st)

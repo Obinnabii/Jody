@@ -1,49 +1,76 @@
-(* Parsing information: ((l1,c1),(l2,c2)) represents a symbol
-   appearing at line l1 character c1 to line l2 character c2. *)
-type info = (int * int) * (int * int)
+(** The abstract syntax tree type. *)
 
-(* Variables. *)
-type var = string
+(******************************************************************************
+   These types (id, unop, binop) are used by the parser.  You do not want to
+   change them.
+ ******************************************************************************)
 
-(* Arithmetic expressions. *)
-type aexp =
-  | Int of int
-  | Var of var
-  | Plus of aexp * aexp
-  | Minus of aexp * aexp
-  | Times of aexp * aexp
-  | Input
+type id = string
 
-(* Boolean expressions. *)
-and bexp =
-  | True
-  | False
-  | Equals of aexp * aexp
-  | NotEquals of aexp * aexp
-  | Less of aexp * aexp
-  | LessEq of aexp * aexp
-  | Greater of aexp * aexp
-  | GreaterEq of aexp * aexp
-  | Not of bexp
-  | And of bexp * bexp
-  | Or of bexp * bexp
+type unop =
+  | UopMinus
+  | UopNot
+  | UopTypeof (* DED *)
+  | UopDeref (* KILL *)
 
-and lst = 
-  | VEmpty 
-  | VCons of com * lst
+type binop =
+  | BopPlus
+  | BopMinus
+  | BopTimes
+  | BopDiv
+  | BopMod
+  | BopLt
+  | BopLeq
+  | BopGt
+  | BopGeq
+  | BopEq
+  | BopNeq
+  | BopOr
+  | BopAnd
+  | BopEqStrict   (* DED *)
+  | BopNeqStrict (* DED *)
+  | BopAssign (* removed *)
+  | BopUpdate (* removed *)
 
-(* Commands. *)
-and com =
-  | Skip
-  | Assign of var * aexp
-  | Seq of com * com
-  | If of bexp * com * com
-  | While of bexp * com
-  | Print of aexp
-  | Test of info * bexp
-  | Match of lst * com * com  
-  | Switch of lst * aexp 
-  | Break
-  | Continue
+(******************************************************************************
+   [expr] is the type of the AST for expressions. You may implement
+   this type however you wish.  Use the example interpreters seen in
+   the textbook as inspiration.
+ ******************************************************************************)
 
-and exp = A of aexp | B of bexp | C of com
+type expr = 
+  | Undef
+  | EInt of int
+  | EBool of bool
+  | EUnop of unop * expr
+  | EBinop of binop * expr * expr
+  | EVar of id
+  | ESeq of expr * expr
+  | EIf of expr * expr * expr
+  | EFun of id list * expr
+  | ERec of id * id list * expr * expr
+  | EDyn of id * id list * expr * expr
+  | EApp of expr * expr list
+  | ELet of id * expr * expr
+  (* | EEmpty
+     | EList of expr * expr *)
+
+
+
+(******************************************************************************
+   [defn] is the type of the AST for definitions. You may implement
+   this type however you wish.  There is only one kind of
+   definition---the let [rec] definition---so this type can be quite
+   simple.
+ ******************************************************************************)
+
+type defn = DLet of id * expr | DDyn of id * id list * expr | DRec of id * id list * expr
+
+(******************************************************************************
+   [phrase] is the type of the AST for phrases. It is used by the
+   parser.  You do not want to change it.
+ ******************************************************************************)
+
+type phrase =
+  | Expr of expr
+  | Defn of defn

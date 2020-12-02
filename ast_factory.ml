@@ -61,8 +61,7 @@ let make_var x =
   EVar (x)
 
 let make_int s =
-  try  EInt (int_of_string s) with 
-  | Failure _ -> Undef
+  EInt (int_of_string s) 
 
 let make_string s =
   failwith "Illegal"
@@ -71,7 +70,7 @@ let make_bool b =
   EBool (b)
 
 let make_undefined () =
-  Undef
+  failwith "Illegal"
 
 let make_object fields =
   failwith "Illegal"

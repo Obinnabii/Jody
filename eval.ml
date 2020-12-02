@@ -1,12 +1,15 @@
 open Ast
 
-type value = unit
+type value = 
+  | VInt of int
+  | VBool of bool
+  | VClosure of id list * expr * env
 
-type result = unit
+type result = unit (** Output *)
 
-type env = unit
+type env = unit (** Sigma *)
 
-type state = unit
+type state = unit (** The dynamic map *)
 
 let initial_env = ()
 
@@ -25,7 +28,8 @@ let string_of_state st =
   failwith "Unimplemented"
 
 let eval_expr (e, env, st) =
-  failwith "Unimplemented"
+  | EInt(n) -> (VInt(n), st)
+  | EBool(b) -> (VBool(b), st)
 
 let eval_expr_init e =
   eval_expr (e, initial_env, initial_state)

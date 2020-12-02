@@ -39,12 +39,11 @@ type binop =
  ******************************************************************************)
 
 type expr = 
-  | Undef
   | EInt of int
   | EBool of bool
+  | EVar of id
   | EUnop of unop * expr
   | EBinop of binop * expr * expr
-  | EVar of id
   | ESeq of expr * expr
   | EIf of expr * expr * expr
   | EFun of id list * expr

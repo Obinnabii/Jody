@@ -64,9 +64,9 @@ let rec eval_expr (e, env, st) =
   | EInt(n) -> (VInt(n), st)
   | EBool(b) -> (VBool(b), st)
   | EVar(x) -> eval_var (x, env, st)
-  (* | EUnop (u, e') ->
-     | EBinop (b, e1, e2) -> *)
-  | _ -> failwith "poop"
+  (* | EUnop (u, e') -> *)
+  | EBinop (b, e1, e2) -> eval_binop b e1 e2 env st
+  | _ -> failwith "unimplemented expr"
 
 and eval_var (x, env, st) = 
   match List.assoc_opt x env with 

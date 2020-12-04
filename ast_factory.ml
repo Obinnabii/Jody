@@ -9,6 +9,12 @@ let make_let_rec_defn f x e =
 let make_let_dyn_defn f x e =
   DDyn (f, x, e)
 
+let make_start () =
+  EStart
+
+let make_stop () =
+  EStop
+
 let make_seq e1 e2 =
   ESeq (e1, e2)
 

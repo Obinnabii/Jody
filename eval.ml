@@ -1,5 +1,7 @@
 open Ast
 
+type time = Reset | Start of float
+
 type value = 
   | VInt of int
   | VBool of bool
@@ -7,19 +9,16 @@ type value =
 
 type env = (id * value) list (** Sigma *)
 
-type state = unit (** The dynamic map *)
+type state = {time: time} (** The dynamic map *)
 
 let initial_env = []
 
-let initial_state = ()
+let initial_state = {time = Reset}
 
 let string_of_value = function
   | VInt i -> string_of_int i
   | VBool b -> Bool.to_string b
 (* | _ -> "undefined" *)
-
-let string_of_result v =
-  failwith "Unimplemented result"
 
 let string_of_env env =
   failwith "Unimplemented env"
@@ -59,14 +58,31 @@ let to_int v =
   | VBool false -> VInt 0
 (* | _ -> failwith "You tried to cast a function to an int" *)
 
-let rec eval_expr (e, env, st) =
+let rec eval_expr (e, env, st) = 
   match e with
   | EInt(n) -> (VInt(n), st)
   | EBool(b) -> (VBool(b), st)
   | EVar(x) -> eval_var x env st
   | EUnop (u, e1) -> eval_unop u e1 env st
   | EBinop (b, e1, e2) -> eval_binop b e1 e2 env st
+  | ELet (x, e1, e2) -> eval_let x e1 e2 env st
+  | EStart -> eval_start st
+  | EStop -> eval_stop st
+  | EIf (e1, e2, e3) -> eval_if e1 e2 e3 env st
+  | ESeq (e1, e2) -> eval_seq e1 e2 env st 
   | _ -> failwith "unimplemented expr"
+
+and eval_if e1 e2 e3 env st =
+  (* get the values *)
+  let v1, st1 = (e1, env, st) |> eval_expr in
+  match v1 |> to_bool, st1 with
+  | VBool b, st' -> eval_expr ((if b then e2 else e3), env, st')
+  | _ -> failwith "unimplemented"
+
+and eval_seq e1 e2 env st =
+  (* get the values *)
+  let _, st' = (e1, env, st) |> eval_expr in
+  eval_expr (e2, env, st')
 
 and eval_var x env st = 
   match List.assoc_opt x env with 
@@ -132,16 +148,36 @@ and def_let x (r,st) env =
   let new_env = (x, get_val (r,st)) :: (env) in
   (r, new_env ,st)
 
+and eval_let x e1 e2 env st = 
+  let v, st' = eval_expr (e1, env, st) in
+  eval_expr (e2, (x, v)::env, st')
+
+and eval_stop st =
+  match st.time with
+  | Reset -> failwith "stop called before start"
+  | Start t -> (VInt(((Sys.time() -. t) *. 1000.0) |> Int.of_float), 
+                {st with time = Reset})
+
+and eval_start st =
+  let t = Sys.time() in
+  (VInt(t *. 1000.0 |> Int.of_float), {st with time = Start t})
+
 let eval_expr_init e =
   eval_expr (e, initial_env, initial_state)
 
 let eval_defn (d, env, st) =
   match d with
-  | DLet (x, e) -> let e1 = (e, env, st) |> eval_expr in def_let x e1 env
+  | DLet (x, e) -> let e1 = (e, env, st) |> eval_expr in begin
+      match e1 with
+      (* | VClosure _ -> def_let x e1 env *)
+      | _ -> failwith "functions are unimplemented"
+    end
   | _ -> failwith "unimplemented defn"
 
 let eval_phrase (p, env, st) =
-  match p with
-  | Expr e -> (match eval_expr (e, env, st) with
-      | (r, st') -> (r, env, st'))
-  | Defn d -> eval_defn (d, env, st)
+  try
+    match p with
+    | Expr e -> let r, st' =  eval_expr (e, env, st) in (r, env, st')
+    | Defn d -> eval_defn (d, env, st)
+  with 
+  | e -> failwith ((e |> Printexc.to_string) ^ " Exception")

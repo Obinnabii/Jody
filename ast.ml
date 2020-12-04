@@ -29,12 +29,12 @@ type binop =
   (* | BopEqStrict   (* DED *)
      | BopNeqStrict (* DED *)
      | BopAssign (* removed *)
-     | BopUpdate removed *)
+       | BopUpdate removed *)
 
-(******************************************************************************
-   [expr] is the type of the AST for expressions. You may implement
-   this type however you wish.  Use the example interpreters seen in
-   the textbook as inspiration.
+(**  ****************************************************************************
+     [expr] is the type of the AST for expressions. You may implement
+     this type however you wish.  Use the example interpreters seen in
+     the textbook as inspiration.
  ******************************************************************************)
 
 type expr = 
@@ -50,6 +50,8 @@ type expr =
   | EDyn of id * id list * expr * expr
   | EApp of expr * expr list
   | ELet of id * expr * expr
+  | EStart
+  | EStop
   (* | EEmpty
      | EList of expr * expr *)
 
@@ -61,7 +63,6 @@ type expr =
    definition---the let [rec] definition---so this type can be quite
    simple.
  ******************************************************************************)
-
 type defn = DLet of id * expr | DDyn of id * id list * expr | DRec of id * id list * expr
 
 (******************************************************************************

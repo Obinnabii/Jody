@@ -14,25 +14,11 @@ let tests = [
      completed interpreter should pass all of them, though. *)
   "int constant", {|42|}, "42";
   "negative int constant", {|-1|}, "-1";
-  "max int", str_max_int, str_max_int;
-  "min int", str_min_int, str_min_int;
   "true", {|true|}, "true";
   "false", {|false|}, "false";
-  "undefined", {|undefined|}, "undefined";
-  "magic word", {|"xyzzy"|}, {|"xyzzy"|};
-  "div by 0", {|4/0|}, {|Exception: "Division by zero"|};
-  "mod by 0", {|4 mod 0|}, {|Exception: "Division by zero"|};
-  "unbound var", {|let x = 0 in y|}, {|Exception: "Unbound variable"|};
   "var", {|let x = 0 in x|}, "0";
-  "throw", {|throw 0|}, "Exception: 0";
-  "anonymous function", {|fun (x) -> 0|}, "<closure>";
-  "apply non-function", {|0 0|}, {|Exception: "Application: not a function"|};
-  "apply wrong arity", {|(fun (x) -> 0) 1 2|}, 
-  {|Exception: "Application: wrong number of arguments"|};
-  "ref", {|ref 0|}, "<location>";
-  "assign non location", {|1 := 0|}, {|Exception: "Assignment to non-location"|};
-  "object", {|{"x":1}|}, "<object>";
-  "length", {|length "bigred"|}, "6";
+  "if truthy", {|if true then 5 else 6|}, "5";
+  "if falsey", {|if 0 then 3110 else 4110|}, "4110"
 ]
 
 let make_interp_expr_test n in_str out_str =

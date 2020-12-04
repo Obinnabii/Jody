@@ -18,6 +18,7 @@ let has_dups lst =
 
 %token <string> INT
 %token <string> ID STRING
+%token TSTART TSTOP
 %token PLUS MINUS TIMES DIV MOD AND OR
        LT LEQ GT GEQ EQUAL NOTEQUAL 
        NOT TYPEOF
@@ -132,6 +133,10 @@ simple_expr:
 		{ make_int s }
   | s = STRING
 		{ make_string s }
+  | TSTART
+            { make_start () }
+  | TSTOP
+            { make_stop () } 
   | TRUE
 		{ make_bool true }
   | FALSE
@@ -146,7 +151,7 @@ simple_expr:
         { make_get_field e1 e2 }
   | e1 = simple_expr; DOT; x = ident
         { make_get_field e1 (make_string x) }
-              
+
 field_bind:
   | f = STRING; COLON; e = expr
         { (f, e) }

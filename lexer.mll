@@ -120,6 +120,10 @@ rule token = parse
         { DOUBLE_SEMI }
   | ";"
         { SEMI }
+  | "|-"
+        { TSTART }
+  | "-|"
+        { TSTOP }
   | "typeof"
         { TYPEOF }
   | "not"

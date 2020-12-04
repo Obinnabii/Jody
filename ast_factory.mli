@@ -22,6 +22,9 @@ val make_let_rec_defn : id -> id list -> expr -> defn
 (** [make_let_dyn_defn f xs e] represents [let dyn f xs = e] *)
 val make_let_dyn_defn : id -> id list -> expr -> defn
 
+val make_start : unit -> expr
+
+val make_stop : unit -> expr
 
 (** [make_seq e1 e2] represents [e1; e2] *)
 val make_seq : expr -> expr -> expr

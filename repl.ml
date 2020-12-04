@@ -100,5 +100,5 @@ let main () =
       | exn -> Lwt.fail exn)
 
 let () = 
-  print_endline "JoCalf\n";
+  print_endline "JoDy\n";
   Lwt_main.run (main ())

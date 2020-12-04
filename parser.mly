@@ -19,12 +19,12 @@ let has_dups lst =
 %token <string> INT
 %token <string> ID STRING
 %token PLUS MINUS TIMES DIV MOD AND OR
-       LT LEQ GT GEQ EQUAL NOTEQUAL EQUALEQUAL NOTEQUALEQUAL
+       LT LEQ GT GEQ EQUAL NOTEQUAL 
        NOT TYPEOF
-%token LPAREN RPAREN SEMI DOUBLE_SEMI ARROW DEREF ASSIGN UPDATE LBRACE RBRACE
+%token LPAREN RPAREN SEMI DOUBLE_SEMI ARROW LBRACE RBRACE
        COLON COMMA LBRACKET RBRACKET DOT
 %token TRUE FALSE UNDEFINED
-%token LET IN IF THEN ELSE BEGIN END THROW TRY CATCH HANDLE FINALLY FUN REF
+%token LET IN IF THEN ELSE BEGIN END FINALLY FUN
        WHILE DO DONE DELETE REC DYN
 %token EOF
 
@@ -36,8 +36,6 @@ let has_dups lst =
 %nonassoc below_SEMI
 %nonassoc SEMI
 (* %nonassoc LET *)
-(* %nonassoc CATCH *)
-%nonassoc HANDLE
 %nonassoc FINALLY
 %nonassoc THEN
 %nonassoc ELSE
@@ -45,10 +43,9 @@ let has_dups lst =
 (* %right ARROW *)
 %right OR
 %right AND
-%left EQUAL NOTEQUAL EQUALEQUAL NOTEQUALEQUAL LT LEQ GT GEQ
+%left EQUAL NOTEQUAL LT LEQ GT GEQ
 %left PLUS MINUS
 %left TIMES DIV MOD
-%nonassoc NOT TYPEOF DEREF 
 (* %nonassoc DOT *)
 (* %nonassoc BEGIN FALSE LPAREN TRUE UNDEFINED *)
 
@@ -96,10 +93,6 @@ expr:
         { make_unop uop e }
   | e1 = expr; bop = binop; e2 = expr
         { make_binop bop e1 e2 }
-  | e1 = simple_expr; LBRACKET e2 = expr; RBRACKET; UPDATE; e3 = expr
-        { make_binop BopUpdate (make_get_field e1 e2) e3 }
-  | e1 = simple_expr; DOT x2 = ID; UPDATE; e3 = expr
-        { make_binop BopUpdate (make_get_field e1 (make_string x2)) e3 }
   /* | e1 = expr; AND; e2 = expr
 		{ make_and e1 e2 }
   | e1 = expr; OR; e2 = expr
@@ -116,15 +109,6 @@ expr:
   | LET; DYN; f = ID; LPAREN; xs = nonempty_list(ident); RPAREN; EQUAL; 
     e1 = expr; IN; e2 = seq_expr
 		{ make_let_dyn f xs e1 e2 }
-  | TRY; e1 = seq_expr; CATCH; x = ID; HANDLE; e2 = seq_expr
-        { make_try e1 x e2 }
-  | TRY; e1 = seq_expr; CATCH; x = ID; HANDLE; e2 = seq_expr; 
-    FINALLY; e3 = seq_expr
-        { make_try_finally e1 x e2 e3 }
-  | THROW; e = simple_expr
-        { make_throw e}
-  | REF; e = simple_expr
-        { make_ref e }
   | FUN; LPAREN; xs = nonempty_list(ident); RPAREN; ARROW; e = seq_expr
         { if has_dups xs
           then $syntaxerror (* duplicate argument names *)
@@ -174,8 +158,6 @@ ident:
 %inline unop:
   | MINUS { UopMinus }
   | NOT { UopNot }
-  | TYPEOF { UopTypeof }
-  | DEREF { UopDeref }
 
 %inline binop:
   | PLUS { BopPlus }
@@ -189,9 +171,6 @@ ident:
   | GEQ { BopGeq }
   | EQUAL { BopEq }
   | NOTEQUAL { BopNeq }
-  | EQUALEQUAL { BopEqStrict }
-  | NOTEQUALEQUAL { BopNeqStrict }
-  | ASSIGN { BopAssign }
   | OR {BopOr}
   | AND {BopAnd}
   ;

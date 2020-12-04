@@ -13,20 +13,31 @@ let initial_env = []
 
 let initial_state = ()
 
-let string_of_value v =
-  failwith "Unimplemented"
+let string_of_value = function
+  | VInt i -> string_of_int i
+  | VBool b -> Bool.to_string b
+(* | _ -> "undefined" *)
 
 let string_of_result v =
-  failwith "Unimplemented"
+  failwith "Unimplemented result"
 
 let string_of_env env =
-  failwith "Unimplemented"
+  failwith "Unimplemented env"
 
 let string_of_state st =
-  failwith "Unimplemented"
+  failwith "Unimplemented state"
 
 let get_val = function
   | (v, _) -> v
+
+(** [to_string v] is s if [v] is the string s, s if [v] is the integer i and 
+    s = string_of_int i, "true" if [v] is true, "false" if [v] is false, "undefined" 
+    if [v] is undefined, location, closure, extern, or object. *)
+let to_string v = 
+  match v with 
+  | VInt i -> string_of_int i
+  | VBool b -> Bool.to_string b
+(* | _ -> "undefined" *)
 
 
 (** [to_bool v] is false is [v] is undefined, false, "", 0. True, otherwise. *)
@@ -115,11 +126,22 @@ and simple_cmp_helper e1 e2 env st op =
   | VInt i1, VInt i2 -> (VBool ((op) i1 i2), st)
   | _ -> failwith "addition doesn't type check"
 
+(** [def_let x (r,st) env] adds the binding of [x] and the value of the expresion 
+    [r] in [st] to [env] and returns the new environment.  *)
+and def_let x (r,st) env =
+  let new_env = (x, get_val (r,st)) :: (env) in
+  (r, new_env ,st)
+
 let eval_expr_init e =
   eval_expr (e, initial_env, initial_state)
 
 let eval_defn (d, env, st) =
-  failwith "Unimplemented"
+  match d with
+  | DLet (x, e) -> let e1 = (e, env, st) |> eval_expr in def_let x e1 env
+  | _ -> failwith "unimplemented defn"
 
 let eval_phrase (p, env, st) =
-  failwith "Unimplemented"
+  match p with
+  | Expr e -> (match eval_expr (e, env, st) with
+      | (r, st') -> (r, env, st'))
+  | Defn d -> eval_defn (d, env, st)

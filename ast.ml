@@ -10,8 +10,7 @@ type id = string
 type unop =
   | UopMinus
   | UopNot
-  | UopTypeof 
-  | UopDeref 
+
 
 type binop =
   | BopPlus

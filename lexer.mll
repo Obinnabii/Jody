@@ -160,10 +160,6 @@ rule token = parse
         { EQUAL }
   | "!="
         { NOTEQUAL }
-  | "=="
-        { EQUALEQUAL }
-  | "!=="
-        { NOTEQUALEQUAL }
   | "in"
         { IN }
   | "true"
@@ -178,28 +174,10 @@ rule token = parse
         { THEN }
   | "else"
         { ELSE }
-  | "throw"
-        { THROW }
-  | "try"
-        { TRY }
-  | "catch"
-        { CATCH }
-  | "handle"
-        { HANDLE }
-  | "finally"
-        { FINALLY }
   | "fun"
         { FUN }
   | "->"
         { ARROW }
-  | "ref"
-        { REF }
-  | "!"
-        { DEREF }
-  | ":="
-        { ASSIGN }
-  | "<-"
-        { UPDATE }
   | "while"
         { WHILE }
   | "do"

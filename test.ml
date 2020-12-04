@@ -23,6 +23,7 @@ let tests = [
   "div by 0", {|4/0|}, {|Exception: "Division by zero"|};
   "mod by 0", {|4 mod 0|}, {|Exception: "Division by zero"|};
   "unbound var", {|let x = 0 in y|}, {|Exception: "Unbound variable"|};
+  "var", {|let x = 0 in x|}, "0";
   "throw", {|throw 0|}, "Exception: 0";
   "anonymous function", {|fun (x) -> 0|}, "<closure>";
   "apply non-function", {|0 0|}, {|Exception: "Application: not a function"|};

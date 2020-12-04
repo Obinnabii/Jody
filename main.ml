@@ -10,7 +10,7 @@ let interp_expr s =
     s
     |> Parse.parse_expr
     |> Eval.eval_expr_init
-    |> (fun (r, _) -> string_of_result r)
+    |> (fun (v, _) -> string_of_value v)
   with
     Parse.SyntaxError s | Failure s -> s
 
@@ -19,7 +19,7 @@ let interp_phrase (s, env, st) =
     s
     |> Parse.parse_phrase
     |> (fun p -> Eval.eval_phrase (p, env, st))
-    |> (fun (r, env', st') -> (string_of_result r, env', st'))
+    |> (fun (v, env', st') -> (string_of_value v, env', st'))
   with
-    | Parse.SyntaxError s | Failure s -> (s, env, st)
-    | End_of_file -> ("", env, st)
+  | Parse.SyntaxError s | Failure s -> (s, env, st)
+  | End_of_file -> ("", env, st)

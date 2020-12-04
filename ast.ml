@@ -10,8 +10,8 @@ type id = string
 type unop =
   | UopMinus
   | UopNot
-  | UopTypeof (* DED *)
-  | UopDeref (* KILL *)
+  | UopTypeof 
+  | UopDeref 
 
 type binop =
   | BopPlus
@@ -27,10 +27,10 @@ type binop =
   | BopNeq
   | BopOr
   | BopAnd
-  | BopEqStrict   (* DED *)
-  | BopNeqStrict (* DED *)
-  | BopAssign (* removed *)
-  | BopUpdate (* removed *)
+  (* | BopEqStrict   (* DED *)
+     | BopNeqStrict (* DED *)
+     | BopAssign (* removed *)
+     | BopUpdate removed *)
 
 (******************************************************************************
    [expr] is the type of the AST for expressions. You may implement

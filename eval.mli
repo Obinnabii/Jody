@@ -5,10 +5,6 @@ open Ast
 (** [value] is the type of JoCalf values *)
 type value
 
-(** [result] is the type of JoCalf results, which are either values or
-    exceptions *)
-type result
-
 (** [env] is an environment, which maps identifiers to values *)
 type env
 
@@ -40,12 +36,6 @@ val initial_state : state
     are there just to delimit the string in this comment. *)
 val string_of_value : value -> string
 
-(** [string_of_result r] is a string representing result [r].
-    - If r is a value, that string should be [string_of_value r].
-    - If r is an exception, that string should be
-      ["Exception: " ^ string_of_value v]. *)
-val string_of_result : result -> string
-
 (** [string_of_env env] is a string representing environment [env].
     It is up to you how to construct that string; it will only
     be used in the REPL, not in any test cases. *)
@@ -58,15 +48,15 @@ val string_of_state : state -> string
 
 (** [eval_expr_init e] is [r,st] if [e] in the initial environment and state,
     evaluates to [r,st], that is, <e, initial_env, initial_state> ==> <r, st> *)
-val eval_expr_init : expr -> result * state
+val eval_expr_init : expr -> value * state
 
 (** [eval_expr (e, env, st)] is [(r, st')] if <e, env, st> ==> <r, st'> *)
-val eval_expr : expr * env * state -> result * state
+val eval_expr : expr * env * state -> value * state
 
 (** [eval_defn (d, env, st)] is [(r, env', st')] if
     <d, env, st> ==> <r, env', st'> *)
-val eval_defn : defn * env * state -> result * env * state
+val eval_defn : defn * env * state -> value * env * state
 
 (** [eval_phrase (p, env, st)] is [(r, env', st')] if
     <p, env, st> ==> <r, env', st'> *)
-val eval_phrase : phrase * env * state -> result * env * state
+val eval_phrase : phrase * env * state -> value * env * state

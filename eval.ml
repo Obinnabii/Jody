@@ -63,18 +63,18 @@ let rec eval_expr (e, env, st) =
   match e with
   | EInt(n) -> (VInt(n), st)
   | EBool(b) -> (VBool(b), st)
-  | EVar(x) -> eval_var (x, env, st)
-  (* | EUnop (u, e') -> *)
+  | EVar(x) -> eval_var x env st
+  | EUnop (u, e1) -> eval_unop u e1 env st
   | EBinop (b, e1, e2) -> eval_binop b e1 e2 env st
   | _ -> failwith "unimplemented expr"
 
-and eval_var (x, env, st) = 
+and eval_var x env st = 
   match List.assoc_opt x env with 
   | Some value -> (value, st)
   | None -> failwith "free variable"
 
-and eval_unop (uop, x, st, env) =
-  let v1 = eval_expr (x, env, st) |> get_val in 
+and eval_unop uop e1 env st =
+  let v1 = eval_expr (e1, env, st) |> get_val in 
   match uop with
   | UopNot -> begin 
       match (v1 |> to_bool) with 
@@ -83,7 +83,7 @@ and eval_unop (uop, x, st, env) =
     end
   | UopMinus -> begin match (v1 |> to_int) with 
       | VInt i -> (VInt (~- i), st)
-      | _ -> failwith "only ints can be negative"
+      | _ -> failwith "Unop Minus Failure"
     end
 
 and eval_binop bop e1 e2 env st = 

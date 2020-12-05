@@ -18,7 +18,8 @@ let tests = [
   "false", {|false|}, "false";
   "var", {|let x = 0 in x|}, "0";
   "if truthy", {|if true then 5 else 6|}, "5";
-  "if falsey", {|if 0 then 3110 else 4110|}, "4110"
+  "if falsey", {|if 0 then 3110 else 4110|}, "4110";
+  "sequence", {|5+5;10+10|}, "20";
 ]
 
 let make_interp_expr_test n in_str out_str =

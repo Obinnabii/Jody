@@ -12,7 +12,7 @@ let interp_expr s =
     |> Eval.eval_expr_init
     |> (fun (v, _) -> string_of_value v)
   with
-    Parse.SyntaxError s | Failure s -> s
+    Parse.SyntaxError s | Eval.RunTimeError s -> s
 
 let interp_phrase (s, env, st) =
   try
@@ -21,5 +21,5 @@ let interp_phrase (s, env, st) =
     |> (fun p -> Eval.eval_phrase (p, env, st))
     |> (fun (v, env', st') -> (string_of_value v, env', st'))
   with
-  | Parse.SyntaxError s | Failure s -> (s, env, st)
+  | Parse.SyntaxError s | Eval.RunTimeError s -> (s, env, st)
   | End_of_file -> ("", env, st)

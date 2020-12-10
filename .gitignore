@@ -19,6 +19,9 @@ _build/
 setup.data
 setup.log
 
+# private docs
+doc.private
+
 # Merlin configuring file for Vim and Emacs
 .merlin
 

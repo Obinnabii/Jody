@@ -124,8 +124,6 @@ rule token = parse
         { TSTART }
   | "-|"
         { TSTOP }
-  | "typeof"
-        { TYPEOF }
   | "not"
         { NOT }
   | "&&"

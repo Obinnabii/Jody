@@ -21,11 +21,13 @@ let has_dups lst =
 %token TSTART TSTOP
 %token PLUS MINUS TIMES DIV MOD AND OR
        LT LEQ GT GEQ EQUAL NOTEQUAL 
-       NOT TYPEOF
+       NOT 
+       /* TYPEOF */
 %token LPAREN RPAREN SEMI DOUBLE_SEMI ARROW LBRACE RBRACE
        COLON COMMA LBRACKET RBRACKET DOT
 %token TRUE FALSE UNDEFINED
-%token LET IN IF THEN ELSE BEGIN END FINALLY FUN
+%token LET IN IF THEN ELSE BEGIN END FUN
+/* FINALLY  */
        WHILE DO DONE DELETE REC DYN
 %token EOF
 
@@ -37,10 +39,10 @@ let has_dups lst =
 %nonassoc below_SEMI
 %nonassoc SEMI
 (* %nonassoc LET *)
-%nonassoc FINALLY
+/* %nonassoc FINALLY */
 %nonassoc THEN
 %nonassoc ELSE
-%right ASSIGN UPDATE
+/* %right ASSIGN UPDATE */
 (* %right ARROW *)
 %right OR
 %right AND

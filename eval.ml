@@ -33,23 +33,13 @@ let string_of_state st =
 let get_val = function
   | (v, _) -> v
 
-(** [to_string v] is s if [v] is the string s, s if [v] is the integer i and 
-    s = string_of_int i, "true" if [v] is true, "false" if [v] is false, "undefined" 
-    if [v] is undefined, location, closure, extern, or object. *)
-let to_string v = 
-  match v with 
-  | VInt i -> string_of_int i
-  | VBool b -> Bool.to_string b
-(* | _ -> "undefined" *)
-
-
 (** [to_bool v] is false is [v] is undefined, false, "", 0. True, otherwise. *)
 let to_bool v = 
   match v with 
   | VBool v -> VBool v 
   | VInt 0 -> VBool false 
   | VInt _ -> VBool true
-  | _ -> failwith "You tried to cast a function into a bool"
+  | _ -> failwith "Casting: you tried to cast a function into a bool"
 
 (** [to_int v] is undefined if [v] is undefined, location, closure, extern, or 
     object, i if [v] is the integer i, 1 if [v] is true, 0 if [v] is false, i if 
@@ -60,10 +50,11 @@ let to_int v =
   | VInt i -> VInt i
   | VBool true -> VInt 1 
   | VBool false -> VInt 0
-  | _ -> failwith "You tried to cast a function to an int"
+  | _ -> failwith "Casting: you tried to cast a function into an int"
 
 let rec eval_expr (e, env, st) = 
   match e with
+  | EApp (e, args) -> eval_app e args st env
   | EBinop (b, e1, e2) -> eval_binop b e1 e2 env st
   | EBool(b) -> (VBool(b), st)
   | EFun (xs, e) -> eval_fun xs e env st
@@ -83,7 +74,7 @@ and eval_if e1 e2 e3 env st =
   let v1, st1 = (e1, env, st) |> eval_expr in
   match v1 |> to_bool, st1 with
   | VBool b, st' -> eval_expr ((if b then e2 else e3), env, st')
-  | _ -> failwith "unimplemented"
+  | _ -> failwith "If: e1 not a bool"
 
 and eval_seq e1 e2 env st =
   (* get the values *)
@@ -93,7 +84,7 @@ and eval_seq e1 e2 env st =
 and eval_var x env st = 
   match List.assoc_opt x env with 
   | Some value -> (value, st)
-  | None -> failwith "free variable"
+  | None -> failwith "Variable: free variable error"
 
 and eval_unop uop e1 env st =
   let v1 = eval_expr (e1, env, st) |> get_val in 
@@ -101,11 +92,11 @@ and eval_unop uop e1 env st =
   | UopNot -> begin 
       match (v1 |> to_bool) with 
       | VBool x -> (VBool (not x), st)
-      | _ -> failwith "Unop Not Failure"
+      | _ -> failwith "Not: doesn't type check"
     end
   | UopMinus -> begin match (v1 |> to_int) with 
       | VInt i -> (VInt (~- i), st)
-      | _ -> failwith "Unop Minus Failure"
+      | _ -> failwith "Minus: doesn't type check"
     end
 
 and eval_binop bop e1 e2 env st = 
@@ -132,21 +123,21 @@ and simple_maths_helper e1 e2 env st op =
   let v2 = eval_expr(e2, env, st) |> get_val |> to_int in 
   match v1, v2 with
   | VInt i1, VInt i2 -> (VInt ((op) i1 i2), st)
-  | _ -> failwith "addition doesn't type check"
+  | _ -> failwith "Math Binop: doesn't type check"
 
 and simple_bool_helper e1 e2 env st op =
   let v1 = eval_expr(e1, env, st) |> get_val |> to_bool in 
   let v2 = eval_expr(e2, env, st) |> get_val |> to_bool in 
   match v1, v2 with
   | VBool b1, VBool b2 -> (VBool ((op) b1 b2), st)
-  | _ -> failwith "addition doesn't type check"
+  | _ -> failwith "Boolean Binop: doesn't type check"
 
 and simple_cmp_helper e1 e2 env st op =
   let v1 = eval_expr(e1, env, st) |> get_val |> to_int in 
   let v2 = eval_expr(e2, env, st) |> get_val |> to_int in 
   match v1, v2 with
   | VInt i1, VInt i2 -> (VBool ((op) i1 i2), st)
-  | _ -> failwith "addition doesn't type check"
+  | _ -> failwith "Comparison Binop: doesn't type check"
 
 (** [def_let x (r,st) env] adds the binding of [x] and the value of the expresion 
     [r] in [st] to [env] and returns the new environment.  *)
@@ -167,7 +158,7 @@ and eval_let_rec name xs e1 e2 env st =
 
 and eval_stop st =
   match st.time with
-  | Reset -> failwith "stop called before start"
+  | Reset -> failwith "Timer: stop called before start"
   | Start t -> (VInt(((Sys.time() -. t) *. 1000.0) |> Int.of_float), 
                 {st with time = Reset})
 
@@ -177,7 +168,16 @@ and eval_start st =
 
 and eval_fun xs e env st = VClosure(xs, e, env), st
 
-
+and eval_app e args st env =
+  let rec unfold_params args xs env1 st1 e = match args, xs with
+    |a :: rgs, x :: s -> let v, st1' = eval_expr (a, env, st1) in
+      unfold_params rgs s ((x,v)::env1) st1' e
+    |[], [] -> eval_expr (e, env1, st1)
+    | _, _ -> failwith "Application: wrong number of arguments"
+  in
+  match eval_expr (e, env, st) with
+  | VClosure (xs, e', env_cl), st' -> unfold_params args xs env_cl st' e'
+  | _ -> failwith "Application: not a function"
 
 let eval_expr_init e =
   eval_expr (e, initial_env, initial_state)
@@ -188,7 +188,7 @@ let eval_defn (d, env, st) =
       match get_val e1 with
       | VClosure _ -> def_let x e1 env
       | VRecClosure _ -> def_let x e1 env
-      | _ -> failwith "not a function"
+      | _ -> failwith "Definition: not a function"
     end
   | DLetRec (x, xs, e) -> begin
       let dummy_env = ref [] in 
@@ -205,4 +205,4 @@ let eval_phrase (p, env, st) =
     | Expr e -> let r, st' =  eval_expr (e, env, st) in (r, env, st')
     | Defn d -> eval_defn (d, env, st)
   with 
-  | e -> failwith ((e |> Printexc.to_string) ^ " Exception")
+  | e -> failwith ((e |> Printexc.to_string))

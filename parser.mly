@@ -1,5 +1,5 @@
 (******************************************************************************
-   You do not need to modify anything in this file.
+   Adapted from Cornell's CS3110 A6
  ******************************************************************************)
 
 (* Acknowledgement:  this parser is adapted from the OCaml 4.04 parser
@@ -118,10 +118,10 @@ expr:
           else make_fun xs e }
   | WHILE; e1 = seq_expr; DO; e2 = seq_expr; DONE
         { make_while e1 e2 }
-  | DELETE e1 = simple_expr; LBRACKET; e2 = expr; RBRACKET
+  /* | DELETE e1 = simple_expr; LBRACKET; e2 = expr; RBRACKET
         { make_delete_field e1 e2 }
   | DELETE e = simple_expr; DOT; x = ident
-        { make_delete_field e (make_string x) }
+        { make_delete_field e (make_string x) } */
 	;
 
 simple_expr:
@@ -143,16 +143,16 @@ simple_expr:
 		{ make_bool true }
   | FALSE
 		{ make_bool false }
-  | UNDEFINED
+  /* | UNDEFINED
 		{ make_undefined () }
   | LBRACE; fields = separated_list(COMMA, field_bind); RBRACE
         { if fields |> List.map fst |> has_dups
           then $syntaxerror (* duplicate fields *)
-          else make_object fields }
+          else make_object fields } 
   | e1 = simple_expr; LBRACKET e2 = expr; RBRACKET 
         { make_get_field e1 e2 }
   | e1 = simple_expr; DOT; x = ident
-        { make_get_field e1 (make_string x) }
+        { make_get_field e1 (make_string x) } */
 
 field_bind:
   | f = STRING; COLON; e = expr

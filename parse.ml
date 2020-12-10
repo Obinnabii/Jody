@@ -1,6 +1,5 @@
 (******************************************************************************
-   You do not need to modify anything in this file.
-   It provides an interface between the parser and the rest of the interpreter.
+   Adapted from Cornell's CS3110 A6
  ******************************************************************************)
 
 open Lexing

@@ -1,3 +1,7 @@
+# ******************************************************************************
+#    Adapted from Cornell's CS3110 A6
+# ******************************************************************************
+
 UNITS=ast_factory authors eval main parse
 MLS_WITHOUT_MLIS=ast
 MLS=$(UNITS:=.ml) $(MLS_WITHOUT_MLIS:=.ml)
@@ -31,7 +35,6 @@ check:
 
 finalcheck: check
 	bash checkzip.sh
-	bash finalcheck.sh
 
 zip:
 	zip a6src.zip *.ml* _tags Makefile

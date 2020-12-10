@@ -1,14 +1,12 @@
+(******************************************************************************
+   Adapted from Cornell's CS3110 A6
+ ******************************************************************************)
+
 (** Builds AST nodes for the parser. *)
 
 (*******************************************************************************
    This AST "factory" contains functions that the parser calls to produce
-   AST nodes.  This design enables the parser to be ignorant of the
-   names of the constructors of your AST, thus enabling everyone in the
-   class to design their own AST type.
-
-   You don't want to change any of the names or types appearing in this
-   factory, because then the Menhir parser in `parser.mly` would have to be
-   modified---something you really don't want to do.
+   AST nodes.
  ******************************************************************************)
 
 open Ast
@@ -22,8 +20,10 @@ val make_let_rec_defn : id -> id list -> expr -> defn
 (** [make_let_dyn_defn f xs e] represents [let dyn f xs = e] *)
 val make_let_dyn_defn : id -> id list -> expr -> defn
 
+(** [make_start ()] represents [|-] *)
 val make_start : unit -> expr
 
+(** [make_stop ()] represents [-|] *)
 val make_stop : unit -> expr
 
 (** [make_seq e1 e2] represents [e1; e2] *)
@@ -53,19 +53,20 @@ val make_let_rec : id -> id list -> expr -> expr -> expr
 (** [make_let_dyn f xs e1 e2] represents [let dyn f xs = e1 in e2] *)
 val make_let_dyn : id -> id list -> expr -> expr -> expr
 
-(** [make_try e1 x e2] represents [try e1 catch x handle e2] *)
-val make_try : expr -> id -> expr -> expr
+(* (** [make_try e1 x e2] represents [try e1 catch x handle e2] *)
+   val make_try : expr -> id -> expr -> expr
 
-(** [make_try_finally e1 x e2 e3] represents
+   (** [make_try_finally e1 x e2 e3] represents
     [try e1 catch x handle e2 finally e3] *)
-val make_try_finally : expr -> id -> expr -> expr
-  -> expr
+   val make_try_finally : expr -> id -> expr -> expr
+   -> expr)
 
-(** [make_throw e] represents [throw e] *)
-val make_throw : expr -> expr
+   (** [make_throw e] represents [throw e] *)
+   val make_throw : expr -> expr
 
-(** [make_ref e] represents [ref e] *)
-val make_ref : expr -> expr
+   (** [make_ref e] represents [ref e] *)
+   val make_ref : expr -> expr
+*)
 
 (** [make_fun [x1; ...; xn] e] represents [fun (x1 ... xn) e] *)
 val make_fun : id list -> expr -> expr
@@ -73,8 +74,8 @@ val make_fun : id list -> expr -> expr
 (** [make_while e1 e2] represents [while e1 do e2 done] *)
 val make_while : expr -> expr -> expr
 
-(** [make_delete_field e1 e2] represents [delete e1[e2]] *)
-val make_delete_field : expr -> expr -> expr
+(* (** [make_delete_field e1 e2] represents [delete e1[e2]] *)
+   val make_delete_field : expr -> expr -> expr *)
 
 (** [make_var x] represents [x] *)
 val make_var : id -> expr
@@ -89,11 +90,11 @@ val make_string : string -> expr
 (** [make_bool b] represents the boolean [b] *)
 val make_bool : bool -> expr
 
-(** [make_undefined ()] represents [undefined] *)
-val make_undefined : unit -> expr
+(* (** [make_undefined ()] represents [undefined] *)
+   val make_undefined : unit -> expr
 
-(** [make_object [x1, e1; ...; xn, en]] represents [{x1:e1, ..., xn:en}]. *)
-val make_object : (id * expr) list -> expr
+   (** [make_object [x1, e1; ...; xn, en]] represents [{x1:e1, ..., xn:en}]. *)
+   val make_object : (id * expr) list -> expr
 
-(** [make_get_field e1 e2] represents [e1[e2]] *)
-val make_get_field : expr -> expr -> expr
+   (** [make_get_field e1 e2] represents [e1[e2]] *)
+   val make_get_field : expr -> expr -> expr *)

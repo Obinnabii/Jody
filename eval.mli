@@ -11,34 +11,23 @@ type env
 (** [state] is a state, which maps locations to values *)
 type state
 
-(** [initial_env] is the environment in which evaluation begins.
-    It must contain all the external functions defined in the language manual.
-*)
+(** [initial_env] is the environment in which evaluation begins. *)
 val initial_env : env
 
-(** [initial_state] is the state in which evaluation begins.
-    It should not have any allocated locations. *)
+(** [initial_state] is the state in which evaluation begins. *)
 val initial_state : state
 
 (** [string_of_value v] is a string representing value [v].
     - If v is an int, that string should be [string_of_int v].
-    - If v is a string, that string should be 
-      ["\"" ^ String.escaped v ^ "\""].
     - If v is a boolean, that string should be [string_of_bool b].
-    - If v is undefined, that string should be [undefined].
-    - If v is an object, that string should be [<object>].
-    - If v is a location, that string should be [<location>].
-    - If v is a closure, that string should be [<closure>].
-    - If v is an extern, that string should be [<extern>].
-
-    In the final five cases above, note that the string [string_of_value] 
-    returns should not contain the surrounding square brackets; they
-    are there just to delimit the string in this comment. *)
+    - If v is a closure, that string should be [<fun>].
+    - If v is an recursive closure, that string should be [<rec fun>].
+*)
 val string_of_value : value -> string
 
 (** [string_of_env env] is a string representing environment [env].
-    It is up to you how to construct that string; it will only
-    be used in the REPL, not in any test cases. *)
+    Shows all the functions and variables stored in the environment at any given
+    time*)
 val string_of_env : env -> string
 
 (** [string_of_state st] is a string representing state [st].

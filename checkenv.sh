@@ -3,7 +3,7 @@
 
 environment=good
 OPAMV=2.*
-OCAMLV=4.08.*
+OCAMLV=4.09.*
 OUNITV=2.*
 
 OPAM_LOCATION="$(command -v opam)"
@@ -63,8 +63,7 @@ WARNING
 
 Your OCaml environment looks broken to me.  Check the error 
 messages above carefully to determine what is wrong with 
-your environment.  Please see a consultant for help if you 
-cannot determine what is wrong.
+your environment.
 ===========================================================
 EOF
 fi

@@ -177,6 +177,7 @@ and eval_app e args st env =
   in
   match eval_expr (e, env, st) with
   | VClosure (xs, e', env_cl), st' -> unfold_params args xs env_cl st' e'
+  | VRecClosure (xs, e', env_rec), st' -> unfold_params args xs !env_rec st' e'
   | _ -> failwith "Application: not a function"
 
 let eval_expr_init e =
@@ -205,4 +206,5 @@ let eval_phrase (p, env, st) =
     | Expr e -> let r, st' =  eval_expr (e, env, st) in (r, env, st')
     | Defn d -> eval_defn (d, env, st)
   with 
+  | Failure _ as exn -> raise exn
   | e -> failwith ((e |> Printexc.to_string))

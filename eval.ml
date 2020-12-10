@@ -19,10 +19,13 @@ let initial_state = {time = Reset}
 let string_of_value = function
   | VInt i -> string_of_int i
   | VBool b -> Bool.to_string b
-(* | _ -> "undefined" *)
+  | VClosure _ -> "<fun>"
+  | VRecClosure _ -> "<rec fun>"
 
-let string_of_env env =
-  failwith "Unimplemented env"
+let string_of_env =
+  List.fold_left 
+    (fun acc (id, v) -> 
+       acc ^ id ^ " -> " ^ string_of_value v ^ ";\n") "" 
 
 let string_of_state st =
   failwith "Unimplemented state"
@@ -67,7 +70,7 @@ let rec eval_expr (e, env, st) =
   | EIf (e1, e2, e3) -> eval_if e1 e2 e3 env st
   | EInt(n) -> (VInt(n), st)
   | ELet (x, e1, e2) -> eval_let x e1 e2 env st
-  | ELetRec (name, xs, e1, e2) -> eval_let_rec name xs e1 e1 env st
+  | ELetRec (name, xs, e1, e2) -> eval_let_rec name xs e1 e2 env st
   | ESeq (e1, e2) -> eval_seq e1 e2 env st 
   | EStart -> eval_start st
   | EStop -> eval_stop st
@@ -156,8 +159,9 @@ and eval_let x e1 e2 env st =
   eval_expr (e2, (x, v)::env, st')
 
 and eval_let_rec name xs e1 e2 env st =
-  let dummy_env = ref env in 
-  let env' = (name, VRecClosure(xs, e1, dummy_env))::env in
+  let dummy_env = ref [] in 
+  let v1 = VRecClosure(xs, e1, dummy_env) in
+  let env' = (name, v1 )::env in
   dummy_env := env';
   eval_expr (e2, env', st)
 
@@ -181,9 +185,17 @@ let eval_expr_init e =
 let eval_defn (d, env, st) =
   match d with
   | DLet (x, e) -> let e1 = (e, env, st) |> eval_expr in begin
-      match e1 with
-      (* | VClosure _ -> def_let x e1 env *)
-      | _ -> failwith "functions are unimplemented"
+      match get_val e1 with
+      | VClosure _ -> def_let x e1 env
+      | VRecClosure _ -> def_let x e1 env
+      | _ -> failwith "not a function"
+    end
+  | DLetRec (x, xs, e) -> begin
+      let dummy_env = ref [] in 
+      let e' = VRecClosure(xs, e, dummy_env) in
+      let env' = (x, e')::env in
+      dummy_env := env';
+      def_let x (e',st) env'
     end
   | _ -> failwith "unimplemented defn"
 

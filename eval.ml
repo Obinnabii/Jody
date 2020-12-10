@@ -5,9 +5,10 @@ type time = Reset | Start of float
 type value = 
   | VInt of int
   | VBool of bool
-  (* | VClosure of id list * expr * env *)
+  | VClosure of id list * expr * env
+  | VRecClosure of id list * expr * env ref
 
-type env = (id * value) list (** Sigma *)
+and env = (id * value) list (** Sigma *)
 
 type state = {time: time} (** The dynamic map *)
 
@@ -45,7 +46,7 @@ let to_bool v =
   | VBool v -> VBool v 
   | VInt 0 -> VBool false 
   | VInt _ -> VBool true
-(* | _ -> failwith "You tried to cast a function into a bool" *)
+  | _ -> failwith "You tried to cast a function into a bool"
 
 (** [to_int v] is undefined if [v] is undefined, location, closure, extern, or 
     object, i if [v] is the integer i, 1 if [v] is true, 0 if [v] is false, i if 
@@ -56,20 +57,22 @@ let to_int v =
   | VInt i -> VInt i
   | VBool true -> VInt 1 
   | VBool false -> VInt 0
-(* | _ -> failwith "You tried to cast a function to an int" *)
+  | _ -> failwith "You tried to cast a function to an int"
 
 let rec eval_expr (e, env, st) = 
   match e with
-  | EInt(n) -> (VInt(n), st)
-  | EBool(b) -> (VBool(b), st)
-  | EVar(x) -> eval_var x env st
-  | EUnop (u, e1) -> eval_unop u e1 env st
   | EBinop (b, e1, e2) -> eval_binop b e1 e2 env st
+  | EBool(b) -> (VBool(b), st)
+  | EFun (xs, e) -> eval_fun xs e env st
+  | EIf (e1, e2, e3) -> eval_if e1 e2 e3 env st
+  | EInt(n) -> (VInt(n), st)
   | ELet (x, e1, e2) -> eval_let x e1 e2 env st
+  | ELetRec (name, xs, e1, e2) -> eval_let_rec name xs e1 e1 env st
+  | ESeq (e1, e2) -> eval_seq e1 e2 env st 
   | EStart -> eval_start st
   | EStop -> eval_stop st
-  | EIf (e1, e2, e3) -> eval_if e1 e2 e3 env st
-  | ESeq (e1, e2) -> eval_seq e1 e2 env st 
+  | EUnop (u, e1) -> eval_unop u e1 env st
+  | EVar(x) -> eval_var x env st
   | _ -> failwith "unimplemented expr"
 
 and eval_if e1 e2 e3 env st =
@@ -152,6 +155,12 @@ and eval_let x e1 e2 env st =
   let v, st' = eval_expr (e1, env, st) in
   eval_expr (e2, (x, v)::env, st')
 
+and eval_let_rec name xs e1 e2 env st =
+  let dummy_env = ref env in 
+  let env' = (name, VRecClosure(xs, e1, dummy_env))::env in
+  dummy_env := env';
+  eval_expr (e2, env', st)
+
 and eval_stop st =
   match st.time with
   | Reset -> failwith "stop called before start"
@@ -161,6 +170,10 @@ and eval_stop st =
 and eval_start st =
   let t = Sys.time() in
   (VInt(t *. 1000.0 |> Int.of_float), {st with time = Start t})
+
+and eval_fun xs e env st = VClosure(xs, e, env), st
+
+
 
 let eval_expr_init e =
   eval_expr (e, initial_env, initial_state)

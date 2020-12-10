@@ -38,20 +38,20 @@ type binop =
  ******************************************************************************)
 
 type expr = 
-  | EInt of int
-  | EBool of bool
-  | EVar of id
-  | EUnop of unop * expr
-  | EBinop of binop * expr * expr
-  | ESeq of expr * expr
-  | EIf of expr * expr * expr
-  | EFun of id list * expr
-  | ERec of id * id list * expr * expr
-  | EDyn of id * id list * expr * expr
   | EApp of expr * expr list
+  | EBinop of binop * expr * expr
+  | EBool of bool
+  | EFun of id list * expr
+  | EIf of expr * expr * expr
+  | EInt of int
   | ELet of id * expr * expr
+  | ELetDyn of id * id list * expr * expr
+  | ELetRec of id * id list * expr * expr
+  | ESeq of expr * expr
   | EStart
   | EStop
+  | EUnop of unop * expr
+  | EVar of id
   (* | EEmpty
      | EList of expr * expr *)
 
@@ -63,7 +63,7 @@ type expr =
    definition---the let [rec] definition---so this type can be quite
    simple.
  ******************************************************************************)
-type defn = DLet of id * expr | DDyn of id * id list * expr | DRec of id * id list * expr
+type defn = DLet of id * expr | DLetDyn of id * id list * expr | DLetRec of id * id list * expr
 
 (******************************************************************************
    [phrase] is the type of the AST for phrases. It is used by the

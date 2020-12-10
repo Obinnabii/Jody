@@ -4,10 +4,10 @@ let make_let_defn x e =
   DLet (x, e)
 
 let make_let_rec_defn f x e =
-  DRec (f, x, e)
+  DLetRec (f, x, e)
 
 let make_let_dyn_defn f x e =
-  DDyn (f, x, e)
+  DLetDyn (f, x, e)
 
 let make_start () =
   EStart
@@ -37,10 +37,10 @@ let make_let x e1 e2 =
   ELet (x, e1, e2)
 
 let make_let_rec f x e1 e2 =
-  ERec(f, x, e1, e2)
+  ELetRec(f, x, e1, e2)
 
 let make_let_dyn f x e1 e2 =
-  EDyn(f, x, e1, e2)
+  ELetDyn(f, x, e1, e2)
 
 let make_try e1 x e2 =
   failwith "Illegal"

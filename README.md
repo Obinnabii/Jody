@@ -1,5 +1,20 @@
 # Jody
 
+## Overview
+We intend to create a language that has automatic memoization, allowing dynamic programming algorithms to be written using recursion, but actually cache results under the hood.
+
+#### Key Features
+- Basic functional programming language features including: constants, variables, functions(regular, anonymous, and recursive), boolean operators, unary operators, basic arithmetic, if expressions, and exceptions
+- Imperative features like references and while loops
+- Simple but powerful data structures like lists, trees, and graphs
+- Special system functions
+- A visualization function that shows the state of a dynamic programs’ memoization map after computation. This will serve as an aide for debugging.
+- A `dyn` function modifier that enables automatic memoization
+
+We intend to build a language with features to help simplify memoization in recursion. Our plan is to implement a language inspired by JoCalf ♰ and adding many features (a complete list is below). The most important of which is the dyn function modifier that automatically saves solutions to recursive problems. Memoization works by using a data structure that maps inputs to previously computed outputs. Our plan is to create this table under the hood of JoDy so that programmers do not actually have to instantiate any tables or make checks to tables. 
+
+#### How to Run
+
 To make the interpreter run `make repl`
 
 Example program

@@ -1,8 +1,8 @@
 (**
-   Metadata about this submission.
-   @author TODO All author names and NetIDs. 
-*)
+   JoDy is a minimum viable product for a language that has automatic memoization,
+   allowing dynamic programming algorithms to be written using recursion, but 
+   actually cache results under the hood.
 
-(** [hours_worked] is a list of the number of hours each team member
-    worked on this assignment. *)
-val hours_worked : int list
+   This is Project built on JoCalf by Obi Abii and Jack Nash
+
+*)

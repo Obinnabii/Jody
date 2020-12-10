@@ -1,5 +1,7 @@
 open Ast
 
+exception RunTimeError of string
+
 type time = Reset | Start of float
 
 type value = 
@@ -11,6 +13,8 @@ type value =
 and env = (id * value) list (** Sigma *)
 
 type state = {time: time} (** The dynamic map *)
+
+let failwith x = raise (RunTimeError(x))
 
 let initial_env = []
 
@@ -206,5 +210,5 @@ let eval_phrase (p, env, st) =
     | Expr e -> let r, st' =  eval_expr (e, env, st) in (r, env, st')
     | Defn d -> eval_defn (d, env, st)
   with 
-  | Failure _ as exn -> raise exn
+  | RunTimeError _ as exn -> raise exn
   | e -> failwith ((e |> Printexc.to_string))

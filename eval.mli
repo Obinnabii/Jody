@@ -2,6 +2,9 @@
 
 open Ast
 
+(** Raised to signal a Runtime error. *)
+exception RunTimeError of string
+
 (** [value] is the type of JoCalf values *)
 type value
 

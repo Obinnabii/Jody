@@ -12,13 +12,21 @@ type value =
 
 and env = (id * value) list (** Sigma *)
 
-type state = {time: time} (** The dynamic map *)
+let val_compare (v1:value list) (v2:value list) = 
+  (*  [val_compare v1 v2] is zero if [v1] == [v2] 
+      [val_compare v1 v2] is negative if [v1] < [v2]  
+      [val_compare v1 v2] is positive if [v1] > [v2] *)
+  1
+
+module Cache = Map.Make(struct type t = value list let compare = val_compare end)
+
+type state = {time: time; dyn_funs: (id * value Cache.t ref) list} (** The dynamic map *)
 
 let failwith x = raise (RunTimeError(x))
 
 let initial_env = []
 
-let initial_state = {time = Reset}
+let initial_state = {time = Reset; dyn_funs = [] }
 
 let string_of_value = function
   | VInt i -> string_of_int i
@@ -151,7 +159,9 @@ and def_let x (r,st) env =
 
 and eval_let x e1 e2 env st = 
   let v, st' = eval_expr (e1, env, st) in
-  eval_expr (e2, (x, v)::env, st')
+  match v with
+  | VInt _ | VBool _  | VClosure _ -> eval_expr (e2, (x, v)::env, st')
+  | _ -> failwith "Definition: cannot assign Recursive/Dynamic functions in this manner"
 
 and eval_let_rec name xs e1 e2 env st =
   let dummy_env = ref [] in 
@@ -191,9 +201,8 @@ let eval_defn (d, env, st) =
   match d with
   | DLet (x, e) -> let e1 = (e, env, st) |> eval_expr in begin
       match get_val e1 with
-      | VClosure _ -> def_let x e1 env
-      | VRecClosure _ -> def_let x e1 env
-      | _ -> failwith "Definition: not a function"
+      | VInt _ | VBool _  | VClosure _ -> def_let x e1 env
+      | _ -> failwith "Definition: cannot assign Recursive/Dynamic functions in this manner"
     end
   | DLetRec (x, xs, e) -> begin
       let dummy_env = ref [] in 

@@ -5,7 +5,7 @@ open Ast
 (** Raised to signal a Runtime error. *)
 exception RunTimeError of string
 
-(** [value] is the type of JoCalf values *)
+(** [value] is the type of JoDy values *)
 type value
 
 (** [env] is an environment, which maps identifiers to values *)

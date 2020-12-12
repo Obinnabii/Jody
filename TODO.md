@@ -1,8 +1,16 @@
+- [ ] Dynamic stuff
+  - [ ]  Caching
+  - [ ]  Advanced garbage collection
 - [ ] We can add a way to load functions in from txt files.
-- [ ] Might have to add an undefined data type for while loops.
-- [ ] we could make partial ifs if we do the undefined thing ^^
-- [ ] We could create while loops. Very easy imlementation.
-- [ ] We could allow for variables because all functions are in closures so changing
+- [ ] Timer stuff
+  - [ ] Storing times.
+  - [ ] Displaying averages for each lap.
+- [ ] More data structures
+  - [ ] Objects*
+  - [ ] Lists
+  - [ ] Trees
+  - [ ] Graphs
+- [x] We could allow for variables because all functions are in closures so changing
 variable should keep integrity.
 - [ ] While loops are only useful if we have mutable variables. (also, this is an easy
 extension to the language. It is a way to temporarily change the environment

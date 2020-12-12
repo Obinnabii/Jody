@@ -9,6 +9,7 @@ type value =
   | VBool of bool
   | VClosure of id list * expr * env
   | VRecClosure of id list * expr * env ref
+  | VDynClosure of id list * expr * env ref
 
 and env = (id * value) list (** Sigma *)
 
@@ -18,7 +19,7 @@ let val_compare (v1:value list) (v2:value list) =
       [val_compare v1 v2] is positive if [v1] > [v2] *)
   1
 
-module Cache = Map.Make(struct type t = value list let compare = val_compare end)
+module Cache = Map.Make(struct type t = value list;; let compare = val_compare end)
 
 type state = {time: time; dyn_funs: (id * value Cache.t ref) list} (** The dynamic map *)
 
@@ -74,6 +75,7 @@ let rec eval_expr (e, env, st) =
   | EInt(n) -> (VInt(n), st)
   | ELet (x, e1, e2) -> eval_let x e1 e2 env st
   | ELetRec (name, xs, e1, e2) -> eval_let_rec name xs e1 e2 env st
+  | ELetDyn (name, xs, e1, e2) -> eval_let_dyn name xs e1 e2 env st
   | ESeq (e1, e2) -> eval_seq e1 e2 env st 
   | EStart -> eval_start st
   | EStop -> eval_stop st
@@ -93,25 +95,25 @@ and eval_seq e1 e2 env st =
   let _, st' = (e1, env, st) |> eval_expr in
   eval_expr (e2, env, st')
 
-and eval_var x env st = 
-  match List.assoc_opt x env with 
+and eval_var x env st =
+  match List.assoc_opt x env with
   | Some value -> (value, st)
   | None -> failwith "Variable: free variable error"
 
 and eval_unop uop e1 env st =
-  let v1 = eval_expr (e1, env, st) |> get_val in 
+  let v1 = eval_expr (e1, env, st) |> get_val in
   match uop with
-  | UopNot -> begin 
-      match (v1 |> to_bool) with 
+  | UopNot -> begin
+      match (v1 |> to_bool) with
       | VBool x -> (VBool (not x), st)
       | _ -> failwith "Not: doesn't type check"
     end
-  | UopMinus -> begin match (v1 |> to_int) with 
+  | UopMinus -> begin match (v1 |> to_int) with
       | VInt i -> (VInt (~- i), st)
       | _ -> failwith "Minus: doesn't type check"
     end
 
-and eval_binop bop e1 e2 env st = 
+and eval_binop bop e1 e2 env st =
   let math_int_func = simple_maths_helper e1 e2 env st in
   let math_bool_func = simple_bool_helper e1 e2 env st in
   let math_cmp_func = simple_cmp_helper e1 e2 env st in
@@ -131,49 +133,58 @@ and eval_binop bop e1 e2 env st =
   | BopAnd -> math_bool_func (&&)
 
 and simple_maths_helper e1 e2 env st op =
-  let v1 = eval_expr(e1, env, st) |> get_val |> to_int in 
-  let v2 = eval_expr(e2, env, st) |> get_val |> to_int in 
+  let v1 = eval_expr(e1, env, st) |> get_val |> to_int in
+  let v2 = eval_expr(e2, env, st) |> get_val |> to_int in
   match v1, v2 with
   | VInt i1, VInt i2 -> (VInt ((op) i1 i2), st)
   | _ -> failwith "Math Binop: doesn't type check"
 
 and simple_bool_helper e1 e2 env st op =
-  let v1 = eval_expr(e1, env, st) |> get_val |> to_bool in 
-  let v2 = eval_expr(e2, env, st) |> get_val |> to_bool in 
+  let v1 = eval_expr(e1, env, st) |> get_val |> to_bool in
+  let v2 = eval_expr(e2, env, st) |> get_val |> to_bool in
   match v1, v2 with
   | VBool b1, VBool b2 -> (VBool ((op) b1 b2), st)
   | _ -> failwith "Boolean Binop: doesn't type check"
 
 and simple_cmp_helper e1 e2 env st op =
-  let v1 = eval_expr(e1, env, st) |> get_val |> to_int in 
-  let v2 = eval_expr(e2, env, st) |> get_val |> to_int in 
+  let v1 = eval_expr(e1, env, st) |> get_val |> to_int in
+  let v2 = eval_expr(e2, env, st) |> get_val |> to_int in
   match v1, v2 with
   | VInt i1, VInt i2 -> (VBool ((op) i1 i2), st)
   | _ -> failwith "Comparison Binop: doesn't type check"
 
-(** [def_let x (r,st) env] adds the binding of [x] and the value of the expresion 
+(** [def_let x (r,st) env] adds the binding of [x] and the value of the expresion
     [r] in [st] to [env] and returns the new environment.  *)
 and def_let x (r,st) env =
   let new_env = (x, get_val (r,st)) :: (env) in
   (r, new_env ,st)
 
-and eval_let x e1 e2 env st = 
+and eval_let x e1 e2 env st =
   let v, st' = eval_expr (e1, env, st) in
   match v with
   | VInt _ | VBool _  | VClosure _ -> eval_expr (e2, (x, v)::env, st')
   | _ -> failwith "Definition: cannot assign Recursive/Dynamic functions in this manner"
 
 and eval_let_rec name xs e1 e2 env st =
-  let dummy_env = ref [] in 
+  let dummy_env = ref [] in
   let v1 = VRecClosure(xs, e1, dummy_env) in
   let env' = (name, v1 )::env in
   dummy_env := env';
   eval_expr (e2, env', st)
 
+and eval_let_dyn name xs e1 e2 env st =
+  let dummy_env = ref [] in
+  let v1 = VDynClosure(xs, e1, dummy_env) in
+  let env' = (name, v1 )::env in
+  dummy_env := env';
+  let empty = ref Cache.empty in
+  let st' = {st with dyn_funs=(name, empty)::st.dyn_funs} in
+  eval_expr (e2, env', st')
+
 and eval_stop st =
   match st.time with
   | Reset -> failwith "Timer: stop called before start"
-  | Start t -> (VInt(((Sys.time() -. t) *. 1000.0) |> Int.of_float), 
+  | Start t -> (VInt(((Sys.time() -. t) *. 1000.0) |> Int.of_float),
                 {st with time = Reset})
 
 and eval_start st =
@@ -184,14 +195,15 @@ and eval_fun xs e env st = VClosure(xs, e, env), st
 
 and eval_app e args st env =
   let rec unfold_params args xs env1 st1 e = match args, xs with
-    |a :: rgs, x :: s -> let v, st1' = eval_expr (a, env, st1) in
+    | a :: rgs, x :: s -> let v, st1' = eval_expr (a, env, st1) in
       unfold_params rgs s ((x,v)::env1) st1' e
-    |[], [] -> eval_expr (e, env1, st1)
+    | [], [] -> eval_expr (e, env1, st1)
     | _, _ -> failwith "Application: wrong number of arguments"
   in
   match eval_expr (e, env, st) with
   | VClosure (xs, e', env_cl), st' -> unfold_params args xs env_cl st' e'
   | VRecClosure (xs, e', env_rec), st' -> unfold_params args xs !env_rec st' e'
+  | VDynClosure (xs, e', env_dyn), st' ->
   | _ -> failwith "Application: not a function"
 
 let eval_expr_init e =
@@ -205,7 +217,7 @@ let eval_defn (d, env, st) =
       | _ -> failwith "Definition: cannot assign Recursive/Dynamic functions in this manner"
     end
   | DLetRec (x, xs, e) -> begin
-      let dummy_env = ref [] in 
+      let dummy_env = ref [] in
       let e' = VRecClosure(xs, e, dummy_env) in
       let env' = (x, e')::env in
       dummy_env := env';
@@ -218,6 +230,6 @@ let eval_phrase (p, env, st) =
     match p with
     | Expr e -> let r, st' =  eval_expr (e, env, st) in (r, env, st')
     | Defn d -> eval_defn (d, env, st)
-  with 
+  with
   | RunTimeError _ as exn -> raise exn
   | e -> failwith ((e |> Printexc.to_string))

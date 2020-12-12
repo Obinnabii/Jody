@@ -62,8 +62,8 @@ parse_expression:
         { e }
 
 parse_phrase:
-	| e = seq_expr; DOUBLE_SEMI?; EOF
-		{ Expr e }
+  | e = seq_expr; DOUBLE_SEMI?; EOF
+        { Expr e }
   | d = defn; DOUBLE_SEMI?; EOF
         { Defn d }
   | DOUBLE_SEMI?; EOF

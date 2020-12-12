@@ -1,5 +1,6 @@
 - [ ] Dynamic stuff
   - [ ]  Caching
+    - [ ]  String_of_state
   - [ ]  Advanced garbage collection
 - [ ] We can add a way to load functions in from txt files.
 - [ ] Timer stuff

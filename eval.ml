@@ -9,7 +9,7 @@ type value =
   | VBool of bool
   | VClosure of id list * expr * env
   | VRecClosure of id list * expr * env ref
-  | VDynClosure of id list * expr * env ref
+  | VDynClosure of id list * expr * env ref * id
 
 and env = (id * value) list (** Sigma *)
 
@@ -34,6 +34,7 @@ let string_of_value = function
   | VBool b -> Bool.to_string b
   | VClosure _ -> "<fun>"
   | VRecClosure _ -> "<rec fun>"
+  | VDynClosure _ -> "<dyn fun>"
 
 let string_of_env =
   List.fold_left 
@@ -174,7 +175,7 @@ and eval_let_rec name xs e1 e2 env st =
 
 and eval_let_dyn name xs e1 e2 env st =
   let dummy_env = ref [] in
-  let v1 = VDynClosure(xs, e1, dummy_env) in
+  let v1 = VDynClosure(xs, e1, dummy_env, name) in
   let env' = (name, v1 )::env in
   dummy_env := env';
   let empty = ref Cache.empty in
@@ -193,18 +194,51 @@ and eval_start st =
 
 and eval_fun xs e env st = VClosure(xs, e, env), st
 
+
+and is_closure = function 
+  | VClosure _ 
+  | VRecClosure _ 
+  | VDynClosure _ -> true
+  | _ -> false
+
 and eval_app e args st env =
+
   let rec unfold_params args xs env1 st1 e = match args, xs with
     | a :: rgs, x :: s -> let v, st1' = eval_expr (a, env, st1) in
       unfold_params rgs s ((x,v)::env1) st1' e
     | [], [] -> eval_expr (e, env1, st1)
     | _, _ -> failwith "Application: wrong number of arguments"
   in
+
+  let rec unfold_params_dyn args xs env1 st1 e vals first_order name = begin 
+    match args, xs, first_order with
+    | a :: rgs, x :: s, _ -> begin 
+        match eval_expr (a, env, st1) with
+        | v, st1' when is_closure v -> unfold_params_dyn rgs s ((x,v)::env1) st1' e (v::vals) true name
+        | v, st1' -> unfold_params_dyn rgs s ((x,v)::env1) st1' e (v::vals) first_order name
+      end
+    | [], [], true -> eval_expr (e, env1, st1)
+    | [], [], false -> cache_lookup name vals e env1 st1
+    | _ -> failwith "Application: wrong number of arguments"
+  end
+  in
+
   match eval_expr (e, env, st) with
   | VClosure (xs, e', env_cl), st' -> unfold_params args xs env_cl st' e'
   | VRecClosure (xs, e', env_rec), st' -> unfold_params args xs !env_rec st' e'
-  | VDynClosure (xs, e', env_dyn), st' ->
+  | VDynClosure (xs, e', env_dyn, name), st' -> unfold_params_dyn args xs !env_dyn st' e' [] false name
   | _ -> failwith "Application: not a function"
+
+and cache_lookup name vals e env st = 
+  match List.find_opt (fun (x, _) -> x == name) st.dyn_funs with 
+  | Some (_, cache) -> begin 
+      match Cache.(!cache |> find_opt vals) with
+      | Some v -> v, st
+      | None -> let v, st' = eval_expr (e, env, st) in
+        cache := Cache.(!cache |> add vals v);
+        v, st
+    end
+  | None -> failwith "dynamic function not initialized properly, not in cache"
 
 let eval_expr_init e =
   eval_expr (e, initial_env, initial_state)
@@ -216,14 +250,29 @@ let eval_defn (d, env, st) =
       | VInt _ | VBool _  | VClosure _ -> def_let x e1 env
       | _ -> failwith "Definition: cannot assign Recursive/Dynamic functions in this manner"
     end
-  | DLetRec (x, xs, e) -> begin
+  | DLetRec (name, xs, e) -> begin
       let dummy_env = ref [] in
       let e' = VRecClosure(xs, e, dummy_env) in
-      let env' = (x, e')::env in
+      let env' = (name, e')::env in
       dummy_env := env';
-      def_let x (e',st) env'
+      def_let name (e',st) env'
     end
-  | _ -> failwith "unimplemented defn"
+  | DLetDyn (name, xs, e) -> begin
+      let dummy_env = ref [] in
+      let e' = VDynClosure(xs, e, dummy_env, name) in
+      let env' = (name, e')::env in
+      let empty = ref Cache.empty in
+      let st' = {st with dyn_funs=(name, empty)::st.dyn_funs} in
+      dummy_env := env';
+      def_let name (e',st) env'
+    end
+
+let dummy_env = ref [] in
+let v1 = VDynClosure(xs, e1, dummy_env, name) in
+let env' = (name, v1 )::env in
+dummy_env := env';
+
+eval_expr (e2, env', st')
 
 let eval_phrase (p, env, st) =
   try
@@ -233,3 +282,7 @@ let eval_phrase (p, env, st) =
   with
   | RunTimeError _ as exn -> raise exn
   | e -> failwith ((e |> Printexc.to_string))
+
+(* let f y = 1+y in
+   let x = f 2 in
+   y *)

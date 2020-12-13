@@ -100,5 +100,5 @@ let main () =
       | exn -> Lwt.fail exn)
 
 let () = 
-  print_endline "JoDy\n";
+  print_endline "\n\n\nJoDy\nWarning: Dynamic functions that use a timer may not work correctly.\nDynamic functions should be pure, ones that rely on side effects may encounter issues.";
   Lwt_main.run (main ())

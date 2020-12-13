@@ -14,9 +14,6 @@ type value =
 and env = (id * value) list (** Sigma *)
 
 let rec val_compare (v1:value list) (v2:value list) = 
-  (*  [val_compare v1 v2] is zero if [v1] == [v2] 
-      [val_compare v1 v2] is negative if [v1] < [v2]  
-      [val_compare v1 v2] is positive if [v1] > [v2] *)
   match v1, v2 with 
   | h1::t1, h2::t2 -> begin 
       match h1, h2 with 
@@ -247,8 +244,8 @@ and cache_lookup name vals e env st =
   match List.find_opt (fun (x, _) -> x == name) st.dyn_funs with 
   | Some (_, cache) -> begin 
       match Cache.(!cache |> find_opt vals) with
-      | Some v -> print_endline ("memoized " ^List.fold_left (fun acc v -> string_of_value v ^ acc) " " vals); v, st
-      | None -> print_endline ("didn't memoize "^List.fold_left (fun acc v -> string_of_value v ^ acc) " " vals); let v, st' = eval_expr (e, env, st) in
+      | Some v -> v, st
+      | None -> let v, st' = eval_expr (e, env, st) in
         cache := Cache.(!cache |> add vals v);
         v, st
     end

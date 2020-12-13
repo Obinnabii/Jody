@@ -333,4 +333,19 @@ let eval_phrase (p, env, st) =
   | RunTimeError _ as exn -> raise exn
   | e -> failwith ((e |> Printexc.to_string))
 
+let status st = function
+  | "low_mem_mode" -> 
+    st.low_mem_mode |> Bool.to_string |> (^) "Low Memory Cache Mode: "
+  | "display" -> 
+    st.display |> Bool.to_string |> (^) "Display Memoization Status: "
+  | _ -> failwith "RUNTIME ERROR: TOGGLE STATE VA"
+
+let toggle st = function
+  | "low_mem_mode" -> begin
+      {st with low_mem_mode = not st.low_mem_mode}
+    end
+  | "display" -> begin
+      {st with display = not st.display}
+    end
+  | _ -> failwith "RUNTIME ERROR: TOGGLE STATE VA"
 

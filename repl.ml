@@ -28,6 +28,8 @@ module Interpreter = struct
   let quit_regex  = Str.regexp {|^#quit\(;;\)?$|}
   let env_regex   = Str.regexp {|^#env\(;;\)?$|}
   let state_regex = Str.regexp {|^#state\(;;\)?$|}
+  let low_mem_regex = Str.regexp {|^#lowmem\(;;\)?$|}
+  let display_regex = Str.regexp {|^#display\(;;\)?$|}
 
   let matches s r =
     Str.string_match r s 0
@@ -39,6 +41,12 @@ module Interpreter = struct
       (state, Eval.string_of_env state.env)
     else if matches s state_regex then
       (state, Eval.string_of_state state.st)
+    else if matches s low_mem_regex then
+      let state' = {state with st = Eval.toggle state.st "low_mem_mode"} in
+      (state', Eval.status state'.st "low_mem_mode")
+    else if matches s display_regex then
+      let state' = {state with st = Eval.toggle state.st "display"} in
+      (state', Eval.status state'.st "display")
     else
       let (out, env', st') = Main.interp_phrase (s, state.env, state.st) in
       let state' = {

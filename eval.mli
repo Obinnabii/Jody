@@ -52,3 +52,8 @@ val eval_defn : defn * env * state -> value * env * state
 (** [eval_phrase (p, env, st)] is [(r, env', st')] if
     <p, env, st> ==> <r, env', st'> *)
 val eval_phrase : phrase * env * state -> value * env * state
+
+val toggle : state -> string -> state
+
+val status : state -> string -> string
+(* val modes : string list *)

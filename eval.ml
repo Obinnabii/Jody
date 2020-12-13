@@ -13,11 +13,25 @@ type value =
 
 and env = (id * value) list (** Sigma *)
 
-let val_compare (v1:value list) (v2:value list) = 
+let rec val_compare (v1:value list) (v2:value list) = 
   (*  [val_compare v1 v2] is zero if [v1] == [v2] 
       [val_compare v1 v2] is negative if [v1] < [v2]  
       [val_compare v1 v2] is positive if [v1] > [v2] *)
-  1
+  match v1, v2 with 
+  | h1::t1, h2::t2 -> begin 
+      match h1, h2 with 
+      | VInt n1, VInt n2 -> begin 
+          let c = Pervasives.compare n1 n2 in 
+          if c == 0 then val_compare t1 t2 else c 
+        end
+      | VBool b1, VBool b2 ->begin  
+          let c = Pervasives.compare b1 b2 in 
+          if c == 0 then val_compare t1 t2 else c 
+        end
+      | _ -> failwith "Dynamic: unsupported type for dynamic function"
+    end 
+  | [], [] -> 0
+  | _ -> failwith "Dynamic: Wrong input size"
 
 module Cache = Map.Make(struct type t = value list;; let compare = val_compare end)
 
@@ -214,7 +228,7 @@ and eval_app e args st env =
     match args, xs, first_order with
     | a :: rgs, x :: s, _ -> begin 
         match eval_expr (a, env, st1) with
-        | v, st1' when is_closure v -> unfold_params_dyn rgs s ((x,v)::env1) st1' e (v::vals) true name
+        | v, st1' when is_closure v -> print_endline "first order\n"; unfold_params_dyn rgs s ((x,v)::env1) st1' e (v::vals) true name
         | v, st1' -> unfold_params_dyn rgs s ((x,v)::env1) st1' e (v::vals) first_order name
       end
     | [], [], true -> eval_expr (e, env1, st1)
@@ -224,17 +238,17 @@ and eval_app e args st env =
   in
 
   match eval_expr (e, env, st) with
-  | VClosure (xs, e', env_cl), st' -> unfold_params args xs env_cl st' e'
-  | VRecClosure (xs, e', env_rec), st' -> unfold_params args xs !env_rec st' e'
-  | VDynClosure (xs, e', env_dyn, name), st' -> unfold_params_dyn args xs !env_dyn st' e' [] false name
+  | VClosure (xs, e_body, env_cl), st' -> unfold_params args xs env_cl st' e_body
+  | VRecClosure (xs, e_body, env_rec), st' -> unfold_params args xs !env_rec st' e_body
+  | VDynClosure (xs, e_body, env_dyn, name), st' -> unfold_params_dyn args xs !env_dyn st' e_body [] false name
   | _ -> failwith "Application: not a function"
 
 and cache_lookup name vals e env st = 
   match List.find_opt (fun (x, _) -> x == name) st.dyn_funs with 
   | Some (_, cache) -> begin 
       match Cache.(!cache |> find_opt vals) with
-      | Some v -> v, st
-      | None -> let v, st' = eval_expr (e, env, st) in
+      | Some v -> print_endline ("memoized " ^List.fold_left (fun acc v -> string_of_value v ^ acc) " " vals); v, st
+      | None -> print_endline ("didn't memoize "^List.fold_left (fun acc v -> string_of_value v ^ acc) " " vals); let v, st' = eval_expr (e, env, st) in
         cache := Cache.(!cache |> add vals v);
         v, st
     end
@@ -264,15 +278,8 @@ let eval_defn (d, env, st) =
       let empty = ref Cache.empty in
       let st' = {st with dyn_funs=(name, empty)::st.dyn_funs} in
       dummy_env := env';
-      def_let name (e',st) env'
+      def_let name (e',st') env'
     end
-
-let dummy_env = ref [] in
-let v1 = VDynClosure(xs, e1, dummy_env, name) in
-let env' = (name, v1 )::env in
-dummy_env := env';
-
-eval_expr (e2, env', st')
 
 let eval_phrase (p, env, st) =
   try
@@ -283,6 +290,3 @@ let eval_phrase (p, env, st) =
   | RunTimeError _ as exn -> raise exn
   | e -> failwith ((e |> Printexc.to_string))
 
-(* let f y = 1+y in
-   let x = f 2 in
-   y *)

@@ -18,11 +18,19 @@ let rec val_compare (v1:value list) (v2:value list) =
   | h1::t1, h2::t2 -> begin 
       match h1, h2 with 
       | VInt n1, VInt n2 -> begin 
-          let c = Pervasives.compare n1 n2 in 
+          let c = compare n1 n2 in 
           if c == 0 then val_compare t1 t2 else c 
         end
       | VBool b1, VBool b2 ->begin  
-          let c = Pervasives.compare b1 b2 in 
+          let c = compare b1 b2 in 
+          if c == 0 then val_compare t1 t2 else c 
+        end
+      | VBool b1, VInt n1 -> begin
+          let c = compare (if b1 then 1 else 0) n1 in 
+          if c == 0 then val_compare t1 t2 else c 
+        end
+      | VInt n1, VBool b1 -> begin
+          let c = compare n1 (if b1 then 1 else 0) in 
           if c == 0 then val_compare t1 t2 else c 
         end
       | _ -> failwith "Dynamic: unsupported type for dynamic function"
@@ -30,15 +38,24 @@ let rec val_compare (v1:value list) (v2:value list) =
   | [], [] -> 0
   | _ -> failwith "Dynamic: Wrong input size"
 
+
 module Cache = Map.Make(struct type t = value list;; let compare = val_compare end)
 
-type state = {time: time; dyn_funs: (id * value Cache.t ref) list} (** The dynamic map *)
+type state = {time: time; 
+              dyn_funs: (id * value Cache.t ref) list; 
+              low_mem_mode: bool; 
+              display: bool} (** The dynamic map *)
+
+let low_mem_capacity = 1000
 
 let failwith x = raise (RunTimeError(x))
 
 let initial_env = []
 
-let initial_state = {time = Reset; dyn_funs = [] }
+let initial_state = {time = Reset; 
+                     dyn_funs = []; 
+                     low_mem_mode = false;
+                     display = false }
 
 let string_of_value = function
   | VInt i -> string_of_int i
@@ -93,7 +110,7 @@ let rec eval_expr (e, env, st) =
   | EStop -> eval_stop st
   | EUnop (u, e1) -> eval_unop u e1 env st
   | EVar(x) -> eval_var x env st
-  | _ -> failwith "unimplemented expr"
+(* | _ -> failwith "unimplemented expr" *)
 
 and eval_if e1 e2 e3 env st =
   (* get the values *)
@@ -225,7 +242,10 @@ and eval_app e args st env =
     match args, xs, first_order with
     | a :: rgs, x :: s, _ -> begin 
         match eval_expr (a, env, st1) with
-        | v, st1' when is_closure v -> print_endline "first order\n"; unfold_params_dyn rgs s ((x,v)::env1) st1' e (v::vals) true name
+        | v, st1' when is_closure v -> begin 
+            print_endline "\nWarining: first order functions are not memoized";
+            unfold_params_dyn rgs s ((x,v)::env1) st1' e (v::vals) true name 
+          end
         | v, st1' -> unfold_params_dyn rgs s ((x,v)::env1) st1' e (v::vals) first_order name
       end
     | [], [], true -> eval_expr (e, env1, st1)
@@ -240,16 +260,42 @@ and eval_app e args st env =
   | VDynClosure (xs, e_body, env_dyn, name), st' -> unfold_params_dyn args xs !env_dyn st' e_body [] false name
   | _ -> failwith "Application: not a function"
 
+and is_mem display mem_str vals = 
+  let list_to_string acc v= acc^(string_of_value v) in
+  if display then 
+    print_endline (List.fold_left list_to_string mem_str vals)
+
 and cache_lookup name vals e env st = 
   match List.find_opt (fun (x, _) -> x == name) st.dyn_funs with 
   | Some (_, cache) -> begin 
       match Cache.(!cache |> find_opt vals) with
-      | Some v -> v, st
-      | None -> let v, st' = eval_expr (e, env, st) in
-        cache := Cache.(!cache |> add vals v);
-        v, st
+      | Some v -> begin
+          is_mem st.display "\nMEMOIZED ->" vals;
+          v, st
+        end
+      | None -> begin 
+          let v, st' = eval_expr (e, env, st) in
+          is_mem st.display "\nNOT MEMOIZED ->" vals;
+          cache := cache_add cache vals v st.low_mem_mode;
+          v, st
+        end
     end
   | None -> failwith "dynamic function not initialized properly, not in cache"
+
+and cache_add cache vals v low_mem_mode = 
+  if not low_mem_mode 
+  then Cache.(!cache |> add vals v)
+  else begin
+    if Cache.(cardinal !cache <= low_mem_capacity) 
+    then Cache.(!cache |> add vals v)
+    else 
+      let removed_key = Cache.(choose !cache |> fst) in
+      Cache.(
+        !cache
+        |> remove removed_key
+        |> add vals v
+      )
+  end 
 
 let eval_expr_init e =
   eval_expr (e, initial_env, initial_state)
@@ -286,4 +332,5 @@ let eval_phrase (p, env, st) =
   with
   | RunTimeError _ as exn -> raise exn
   | e -> failwith ((e |> Printexc.to_string))
+
 

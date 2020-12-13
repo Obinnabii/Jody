@@ -41,7 +41,12 @@ e ::=
     | if e1 then e2 else e3             (* control flow: if, sequence *)
     | e1; ...; en
     | uop e | e1 bop e2                 (* unary and binary operators *)
-    | |- | -|                           (* start and end timer *)
+    | t                                 (* timer *)
+    
+(* Timer Controls*)
+t ::=                                   
+    | |-                                (* start timer *)
+    | -|                                (* end timer *)
     
 
 (* definitions *)

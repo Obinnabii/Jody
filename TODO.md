@@ -1,15 +1,15 @@
 - [x] Dynamic stuff
   - [x]  Caching
-  - [ ]  Garbage collection #TODO*
+  - [ ]  Garbage collection #TODO* - Jack
 - [ ] We can add a way to load functions in from txt files. #TODO
   - [ ] add file extension `.jd` #TODO
 - [ ] #Display #TODO*
 - [ ] Timer stuff #NICE
   - [ ] Storing times.
   - [ ] Displaying averages for each lap.
-- [ ] More data stru0ctures
+- [ ] More data structures
   - [ ] Records #NICE 
-  - [ ] Lists #REAL NICE
+  - [ ] Lists #REAAL NICE
   - [ ] Trees
   - [ ] Graphs
 - [x] Delete authors.ml

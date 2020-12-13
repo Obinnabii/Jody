@@ -26,7 +26,7 @@ let x = 3 in x
 Look in the test file for more code examples.
 
 # Jody Syntax
-
+#### Language
 ```
 (* expressions *)
 e ::=
@@ -70,3 +70,12 @@ i ::= integers
 b ::= booleans
 x ::= identifiers
 ```
+#### Commands
+```
+#quit           ->      Quit the repl
+#env            ->      Print the environment representation (shows all the 
+                        variable and function assignments)
+#display        ->      Toggles the visibility of an inputs memoization status 
+                        when running dynamic functions
+#lowmem         ->      Toggles low memory mode [#TODO need to explain this @JackRNash]
+

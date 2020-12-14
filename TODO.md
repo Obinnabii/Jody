@@ -1,9 +1,11 @@
 - [x] Dynamic stuff
   - [x]  Caching
-  - [ ]  Garbage collection #TODO* - Jack
-- [ ] We can add a way to load functions in from txt files. #TODO
-  - [ ] add file extension `.jd` #TODO
-- [ ] #Display #TODO*
+  - [ ]  Garbage collection #URGENT* @JackRNash
+  - [ ]  Document low mem mode #URGENT @JackRNash
+- [ ]  Improve Documentation #URGENT @Obinnabii
+- [ ] We can add a way to load functions in from txt files. #URGENT @Obinnabii
+  - [ ] add file extension `.jd` #URGENT
+- [x] #Display #URGENT @Obinnabii
 - [ ] Timer stuff #NICE
   - [ ] Storing times.
   - [ ] Displaying averages for each lap.
@@ -13,5 +15,4 @@
   - [ ] Trees
   - [ ] Graphs
 - [x] Delete authors.ml
-- [x] We could allow for variables because all functions are in closures so changing
-variable should keep integrity.
+- [x] We could allow for variables because all functions are in closures so changing variable should keep integrity.

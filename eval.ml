@@ -2,44 +2,41 @@ open Ast
 
 exception RunTimeError of string
 
+let failwith x = raise (RunTimeError(x))
+
 type time = Reset | Start of float
 
 type value = 
   | VInt of int
   | VBool of bool
+  | VPair of value * value
   | VClosure of id list * expr * env
   | VRecClosure of id list * expr * env ref
   | VDynClosure of id list * expr * env ref * id
 
 and env = (id * value) list (** Sigma *)
 
-let rec val_compare (v1:value list) (v2:value list) = 
+let rec val_compare v1 v2 = 
+  match v1, v2 with 
+  | VInt n1, VInt n2 -> compare n1 n2  
+  | VBool b1, VBool b2 -> compare b1 b2  
+  | VBool b1, VInt n1 -> compare (if b1 then 1 else 0) n1 
+  | VInt n1, VBool b1 -> compare n1 (if b1 then 1 else 0) 
+  | VPair(p1, p2), VPair(q1, q2) -> let c = val_compare p1 q1 in
+    if c == 0 then val_compare p2 q2 else c
+  | _ -> failwith "Dynamic: unsupported comparison type for dynamic function"
+
+let rec val_lst_compare (v1:value list) (v2:value list) = 
   match v1, v2 with 
   | h1::t1, h2::t2 -> begin 
-      match h1, h2 with 
-      | VInt n1, VInt n2 -> begin 
-          let c = compare n1 n2 in 
-          if c == 0 then val_compare t1 t2 else c 
-        end
-      | VBool b1, VBool b2 ->begin  
-          let c = compare b1 b2 in 
-          if c == 0 then val_compare t1 t2 else c 
-        end
-      | VBool b1, VInt n1 -> begin
-          let c = compare (if b1 then 1 else 0) n1 in 
-          if c == 0 then val_compare t1 t2 else c 
-        end
-      | VInt n1, VBool b1 -> begin
-          let c = compare n1 (if b1 then 1 else 0) in 
-          if c == 0 then val_compare t1 t2 else c 
-        end
-      | _ -> failwith "Dynamic: unsupported type for dynamic function"
+      let c = val_compare h1 h2 in 
+      if c == 0 then val_lst_compare t1 t2 else c
     end 
   | [], [] -> 0
   | _ -> failwith "Dynamic: Wrong input size"
 
 
-module Cache = Map.Make(struct type t = value list;; let compare = val_compare end)
+module Cache = Map.Make(struct type t = value list;; let compare = val_lst_compare end)
 
 type state = {time: time; 
               dyn_funs: (id * value Cache.t ref) list; 
@@ -48,8 +45,6 @@ type state = {time: time;
 
 let low_mem_capacity = 1000
 
-let failwith x = raise (RunTimeError(x))
-
 let initial_env = []
 
 let initial_state = {time = Reset; 
@@ -57,9 +52,10 @@ let initial_state = {time = Reset;
                      low_mem_mode = false;
                      display = false }
 
-let string_of_value = function
+let rec string_of_value = function
   | VInt i -> string_of_int i
   | VBool b -> Bool.to_string b
+  | VPair (v1, v2) -> "(" ^ (string_of_value v1) ^ ", " ^ (string_of_value v2) ^ ")"
   | VClosure _ -> "<fun>"
   | VRecClosure _ -> "<rec fun>"
   | VDynClosure _ -> "<dyn fun>"
@@ -81,7 +77,7 @@ let to_bool v =
   | VBool v -> VBool v 
   | VInt 0 -> VBool false 
   | VInt _ -> VBool true
-  | _ -> failwith "Casting: you tried to cast a function into a bool"
+  | _ -> failwith "Casting: you tried to cast an unsupported type into a bool"
 
 (** [to_int v] is undefined if [v] is undefined, location, closure, extern, or 
     object, i if [v] is the integer i, 1 if [v] is true, 0 if [v] is false, i if 
@@ -92,7 +88,7 @@ let to_int v =
   | VInt i -> VInt i
   | VBool true -> VInt 1 
   | VBool false -> VInt 0
-  | _ -> failwith "Casting: you tried to cast a function into an int"
+  | _ -> failwith "Casting: you tried to cast an unsupported type into an int"
 
 let rec eval_expr (e, env, st) = 
   match e with
@@ -110,6 +106,9 @@ let rec eval_expr (e, env, st) =
   | EStop -> eval_stop st
   | EUnop (u, e1) -> eval_unop u e1 env st
   | EVar(x) -> eval_var x env st
+  | EPair(e1, e2) -> eval_pair e1 e2 env st
+  | EFirst(e) -> eval_first e env st
+  | ESecond(e) -> eval_second e env st
 (* | _ -> failwith "unimplemented expr" *)
 
 and eval_if e1 e2 e3 env st =
@@ -189,10 +188,7 @@ and def_let x (r,st) env =
   (r, new_env ,st)
 
 and eval_let x e1 e2 env st =
-  let v, st' = eval_expr (e1, env, st) in
-  match v with
-  | VInt _ | VBool _  | VClosure _ -> eval_expr (e2, (x, v)::env, st')
-  | _ -> failwith "Definition: cannot assign Recursive/Dynamic functions in this manner"
+  let v, st' = eval_expr (e1, env, st) in eval_expr (e2, (x, v)::env, st')
 
 and eval_let_rec name xs e1 e2 env st =
   let dummy_env = ref [] in
@@ -268,17 +264,20 @@ and is_mem display mem_str vals =
 and cache_lookup name vals e env st = 
   match List.find_opt (fun (x, _) -> x == name) st.dyn_funs with 
   | Some (_, cache) -> begin 
-      match Cache.(!cache |> find_opt vals) with
-      | Some v -> begin
-          is_mem st.display "\nMEMOIZED ->" vals;
-          v, st
-        end
-      | None -> begin 
-          let v, st' = eval_expr (e, env, st) in
-          is_mem st.display "\nNOT MEMOIZED ->" vals;
-          cache := cache_add cache vals v st.low_mem_mode;
-          v, st
-        end
+      try
+        match Cache.(!cache |> find_opt vals) with
+        | Some v -> begin
+            is_mem st.display "\nMEMOIZED ->" vals;
+            v, st
+          end
+        | None -> begin 
+            let v, st' = eval_expr (e, env, st) in
+            is_mem st.display "\nNOT MEMOIZED ->" vals;
+            cache := cache_add cache vals v st.low_mem_mode;
+            v, st
+          end
+      with
+      | RunTimeError _ -> eval_expr (e, env, st)
     end
   | None -> failwith "dynamic function not initialized properly, not in cache"
 
@@ -297,16 +296,29 @@ and cache_add cache vals v low_mem_mode =
       )
   end 
 
+and eval_pair e1 e2 env st = 
+  let v1, st1 = eval_expr (e1, env, st) in
+  let v2, st2 = eval_expr (e2, env, st1) in
+  VPair(v1, v2), st2
+
+and eval_first e env st =
+  let v, st' = eval_expr (e, env, st) in
+  match v with
+  | VPair(v1, _) -> v1, st'
+  | _ -> failwith "Can't unpack, not a pair"
+
+and eval_second e env st =
+  let v, st' = eval_expr (e, env, st) in
+  match v with
+  | VPair(_, v2) -> v2, st'
+  | _ -> failwith "Can't unpack, not a pair"
+
 let eval_expr_init e =
   eval_expr (e, initial_env, initial_state)
 
 let eval_defn (d, env, st) =
   match d with
-  | DLet (x, e) -> let e1 = (e, env, st) |> eval_expr in begin
-      match get_val e1 with
-      | VInt _ | VBool _  | VClosure _ -> def_let x e1 env
-      | _ -> failwith "Definition: cannot assign Recursive/Dynamic functions in this manner"
-    end
+  | DLet (x, e) -> let e1 = (e, env, st) |> eval_expr in def_let x e1 env
   | DLetRec (name, xs, e) -> begin
       let dummy_env = ref [] in
       let e' = VRecClosure(xs, e, dummy_env) in
@@ -347,5 +359,5 @@ let toggle st = function
   | "display" -> begin
       {st with display = not st.display}
     end
-  | _ -> failwith "RUNTIME ERROR: TOGGLE STATE VA"
+  | _ -> failwith "RUNTIME ERROR: TOGGLE STATE POORLY CALLED"
 

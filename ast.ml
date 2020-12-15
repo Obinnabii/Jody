@@ -15,6 +15,9 @@ type unop =
   | UopMinus
   | UopNot
 
+type location =
+  | Fst
+  | Snd
 
 type binop =
   | BopPlus
@@ -54,6 +57,9 @@ type expr =
   | EStop
   | EUnop of unop * expr
   | EVar of id
+  | EPair of expr * expr
+  | EFirst of expr
+  | ESecond of expr
   (* | EEmpty
      | EList of expr * expr *)
 

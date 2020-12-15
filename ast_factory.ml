@@ -83,3 +83,13 @@ let make_object fields =
 
 let make_get_field e1 e2 =
   failwith "Illegal"
+
+let make_pair e1 e2 =
+  EPair (e1, e2)
+
+let make_get_location e = function
+  | Fst -> EFirst (e)
+  | Snd -> ESecond (e)
+
+let get_second e =
+  ESecond (e)

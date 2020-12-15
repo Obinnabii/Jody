@@ -42,11 +42,18 @@ e ::=
     | e1; ...; en
     | uop e | e1 bop e2                 (* unary and binary operators *)
     | t                                 (* timer *)
+    | p                                 (* pairs *)
+    | p.#1                              (* first value in a pair *)
+    | p.#2                              (* second value in a pair *)
     
-(* Timer Controls*)
+(* Timer Controls *)
 t ::=                                   
     | |-                                (* start timer *)
     | -|                                (* end timer *)
+
+(* Pair *)
+p ::=
+    | [e, e]
     
 
 (* definitions *)

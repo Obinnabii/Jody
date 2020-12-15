@@ -48,8 +48,8 @@ e ::=
     
 (* Timer Controls *)
 t ::=                                   
-    | |-                                (* start timer *)
-    | -|                                (* end timer *)
+    |     | -                                (* start timer *) |
+    | --- |(* end timer *)
 
 (* Pair *)
 p ::=
@@ -82,7 +82,7 @@ x ::= identifiers
 #quit           ->      Quit the repl
 #env            ->      Print the environment representation (shows all the 
                         variable and function assignments)
-#display        ->      Toggles the visibility of an inputs memoization status 
-                        when running dynamic functions
+#display        ->      Toggles the visibility of an input's memoization status 
+                        when running dynamic functions. 
 #lowmem         ->      Toggles low memory mode [#TODO need to explain this @JackRNash]
 

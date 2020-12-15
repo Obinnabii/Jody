@@ -90,6 +90,11 @@ val make_string : string -> expr
 (** [make_bool b] represents the boolean [b] *)
 val make_bool : bool -> expr
 
+
+val make_pair : expr -> expr -> expr
+
+val make_get_location : expr -> location -> expr 
+
 (* (** [make_undefined ()] represents [undefined] *)
    val make_undefined : unit -> expr
 

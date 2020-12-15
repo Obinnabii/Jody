@@ -25,6 +25,7 @@ let has_dups lst =
        /* TYPEOF */
 %token LPAREN RPAREN SEMI DOUBLE_SEMI ARROW LBRACE RBRACE
        COLON COMMA LBRACKET RBRACKET DOT FORWARD_SLASH
+       FIRST SECOND
 %token TRUE FALSE UNDEFINED
 %token LET IN IF THEN ELSE BEGIN END FUN
 /* FINALLY  */
@@ -143,6 +144,13 @@ simple_expr:
 		{ make_bool true }
   | FALSE
 		{ make_bool false }
+  | LBRACKET; e1 = expr; COMMA; e2 = expr; RBRACKET
+            { make_pair e1 e2}
+  | e1 = simple_expr; DOT; loc = location
+        { make_get_location e1 loc }
+  /* Should this be an expr */
+
+
   /* | UNDEFINED
 		{ make_undefined () }
   | LBRACE; fields = separated_list(COMMA, field_bind); RBRACE
@@ -150,9 +158,7 @@ simple_expr:
           then $syntaxerror (* duplicate fields *)
           else make_object fields } 
   | e1 = simple_expr; LBRACKET e2 = expr; RBRACKET 
-        { make_get_field e1 e2 }
-  | e1 = simple_expr; DOT; x = ident
-        { make_get_field e1 (make_string x) } */
+        { make_get_field e1 e2 } */
 
 field_bind:
   | f = STRING; COLON; e = expr
@@ -161,6 +167,10 @@ field_bind:
 ident:
   | x = ID
         { x }
+
+%inline location:
+  | FIRST { Fst }
+  | SECOND { Snd }
 
 %inline unop:
   | MINUS { UopMinus }

@@ -197,6 +197,10 @@ rule token = parse
         { LBRACE }
   | "}"
         { RBRACE }
+  | "#1"
+        { FIRST }
+  | "#2"
+        { SECOND }
   | ":"
         { COLON }
   | ","

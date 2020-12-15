@@ -20,8 +20,17 @@ let syntax_error_message lexbuf  =
     (location_message lexbuf)
     (lexeme lexbuf)
 
+let lex_syntax_error_message lexbuf  =
+  Printf.sprintf
+    "lexer error, %s: %s"
+    (location_message lexbuf)
+    (lexeme lexbuf)
+
 let parse_error lexbuf =
   raise (SyntaxError (syntax_error_message lexbuf))
+
+let lex_error lexbuf =
+  raise (SyntaxError (lex_syntax_error_message lexbuf))
 
 let unexpected_error msg lexbuf =
   failwith ("Unexpected parsing exception: " ^ msg
@@ -32,7 +41,8 @@ let parse parser_start s =
   try
     parser_start Lexer.token lexbuf
   with
-  | Parser.Error | Lexer.Error -> parse_error lexbuf
+  | Parser.Error -> parse_error lexbuf
+  | Lexer.Error -> lex_error lexbuf
   | Failure s -> unexpected_error s lexbuf
 
 let parse_expr =

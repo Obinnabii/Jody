@@ -102,7 +102,14 @@ let int_literal =
 rule token = parse
   | blank+
         { token lexbuf }
-  | ['\n']
+  | "\\" newline ([' ' '\t'] * as space)
+        { new_line lexbuf;
+          let pos = lexbuf.lex_curr_p in
+          lexbuf.lex_curr_p <- { pos with
+            pos_bol = pos.pos_cnum - (String.length space)
+          };
+          token lexbuf }
+  | newline
         { new_line lexbuf; token lexbuf }
   | int_literal
         { INT (Lexing.lexeme lexbuf) }

@@ -48,8 +48,8 @@ e ::=
     
 (* Timer Controls *)
 t ::=                                   
-    |     | -                                (* start timer *) |
-    | --- |(* end timer *)
+    | |-                                (* start timer *)
+    | -|                                (* end timer *)
 
 (* Pair *)
 p ::=

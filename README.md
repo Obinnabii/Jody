@@ -85,5 +85,6 @@ x ::= identifiers
                         variable and function assignments)
 #display        ->      Toggles the visibility of an input's memoization status 
                         when running dynamic functions. 
-#lowmem         ->      Toggles low memory mode [#TODO need to explain this @JackRNash]
+#lowmem         ->      Toggles low memory mode which restricts the amount
+                        of results that can be cached/memoized for a dynamic function.
 

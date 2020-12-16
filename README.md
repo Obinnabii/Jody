@@ -5,12 +5,13 @@ We intend to create a language that has automatic memoization, allowing dynamic 
 
 #### Key Features
 - Basic functional programming language features including: constants, variables, first-order functions(regular, anonymous, and recursive), boolean operators, unary operators, basic arithmetic, and if expressions
-- Simple but powerful data structures like records, lists, trees, and graphs
-- Special system functions
-<!-- - A visualization function that shows the state of a dynamic programs’ memoization map after computation. This will serve as an aide for debugging. -->
+- A simple but powerful data structure -> pairs
+- Low mem mode as a sort of rudimentary garbage collection system
+- A system timer to see how much of the systems time was used on a particular block of code. This will serve as proof of efficiency and an aide for programmers who are concerned about efficient JoDy code.
+- A display mode that shows the state of a dynamic programs’ memoization one each computation. This will serve as an aide for debugging.
 - A `dyn` function modifier that enables automatic memoization
 
-We intend to build a language with features to help simplify memoization in recursion. Our plan is to implement a language inspired by JoCalf ♰ and adding many features (a complete list is below). The most important of which is the dyn function modifier that automatically saves solutions to recursive problems. Memoization works by using a data structure that maps inputs to previously computed outputs. Our plan is to create this table under the hood of JoDy so that programmers do not actually have to instantiate any tables or make checks to tables. 
+We intend to build a language with features to help simplify memoization in recursion. Our plan is to implement a language inspired by JoCalf and add many features (a complete list is below). The most important of which is the dyn function modifier that automatically saves solutions to recursive problems. Memoization works by using a data structure that maps inputs to previously computed outputs. Our plan is to create this table under the hood of JoDy so that programmers do not actually have to instantiate any tables or make checks to tables. 
 
 #### How to Run
 

@@ -1,0 +1,4 @@
+(* recursive fibonacci *)
+let rec rfib(a) = if a <= 2 then 1 else rfib(a-2) + rfib(a-1);;
+(* dynamic fibonacci *)
+let dyn dfib(b) = if b <= 2 then 1 else dfib(b-2) + dfib(b-1);;

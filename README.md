@@ -29,6 +29,10 @@ Look in the test file for more code examples.
 # Jody Syntax
 #### Language
 ```
+(* phrase *)
+p ::=
+    | e | d
+
 (* expressions *)
 e ::=
     | i | b                             (* constants *)
@@ -49,8 +53,8 @@ e ::=
     
 (* Timer Controls *)
 t ::=                                   
-    | |-                                (* start timer *)
-    | -|                                (* end timer *)
+    | |-                                 (* start timer *)
+    | -|                                 (* end timer *)
 
 (* Pair *)
 p ::=
@@ -74,6 +78,10 @@ bop ::=
     | = | != | == | !==
     | || | $$
 
+(* comment system *)
+c ::=
+    | (* | *)
+
 i ::= integers
 b ::= booleans
 x ::= identifiers
@@ -82,9 +90,19 @@ x ::= identifiers
 ```
 #quit           ->      Quit the repl
 #env            ->      Print the environment representation (shows all the 
-                        variable and function assignments)
+                        variable and function assignments that have been made and the order in which they were made)
 #display        ->      Toggles the visibility of an input's memoization status 
                         when running dynamic functions. 
 #lowmem         ->      Toggles low memory mode which restricts the amount
                         of results that can be cached/memoized for a dynamic function.
+#load           ->      Loads a relative filepath. JoDy only loads files with the extension
+                        .jd. This command will run the lines in the file as separate repl
+                        phrases. A newline marks the beginning of a new phrase.
+                        #load will print out the output of the last line in the file
+                        and any definitions will be included in the repl environment.
+
+                        *NOTE:* Definitions made outside a file will not affect the file
+                        when it loads. In this way, #load is deterministic.
+
+```
 

@@ -15,6 +15,9 @@ much slower than `dfib`. However, as soon as the value increases much past 30,
 `rfib` becomes prohibitively slow and some sort of memoization is required which
 is where Jody shines.
 
+**NOTE**
+`#load demo.jd` will load `rfib` and `dfib` into the repl environment for you. 
+
 ### Demo Program
 ```
 let rec rfib(a) = if a <= 2 then 1 else rfib(a-2) + rfib(a-1);;
@@ -22,3 +25,8 @@ let dyn dfib(b) = if b <= 2 then 1 else dfib(b-2) + dfib(b-1);;
 |-; rfib(50); -|
 |-; dfib(50); -|
 ```
+
+### Other Features
+
+A list of other commands that can be run on JoDy can be found in the readme.md 
+file. Examples of code can also be found in `test.ml`

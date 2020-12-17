@@ -345,6 +345,11 @@ let eval_phrase (p, env, st) =
   | RunTimeError _ as exn -> raise exn
   | e -> failwith ((e |> Printexc.to_string))
 
+let combine_env e1 e2 = e1 @ e2
+
+let combine_state st_repl st_file = 
+  {st_repl with dyn_funs=st_file.dyn_funs@st_repl.dyn_funs} 
+
 let status st = function
   | "low_mem_mode" -> 
     st.low_mem_mode |> Bool.to_string |> (^) "Low Memory Cache Mode: "

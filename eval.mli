@@ -53,6 +53,16 @@ val eval_defn : defn * env * state -> value * env * state
     <p, env, st> ==> <r, env', st'> *)
 val eval_phrase : phrase * env * state -> value * env * state
 
+(** [combine_env env_repl env_file] combines the environment of
+    the repl before reading in code from a file with the environment
+    of the file. *)
+val combine_env : env -> env -> env
+
+(** [combine_state st_repl st_file] combines the state of
+    the repl before reading in code from a file with the state
+    of the file. *)
+val combine_state : state -> state -> state
+
 val toggle : state -> string -> state
 
 val status : state -> string -> string

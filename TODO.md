@@ -1,15 +1,16 @@
 - [x] Dynamic stuff
   - [x]  Caching
-  - [ ]  Garbage collection #URGENT* @JackRNash
-  - [ ]  Document low mem mode #URGENT @JackRNash
-- [ ]  Improve Documentation #URGENT @Obinnabii
-- [ ] We can add a way to load functions in from txt files. #URGENT @Obinnabii
-  - [ ] add file extension `.jd` #URGENT
+  - [x]  Garbage collection #URGENT* @JackRNash
+  - [x]  Document low mem mode #URGENT @JackRNash
+- [x]  Improve Documentation #URGENT @Obinnabii
+- [x] We can add a way to load functions in from txt files. #URGENT @Obinnabii
+  - [x] add file extension `.jd` #URGENT
 - [x] #Display #URGENT @Obinnabii
 - [ ] Timer stuff #NICE
   - [ ] Storing times.
   - [ ] Displaying averages for each lap.
 - [ ] More data structures
+  - [x] Pairs #URGENT @both
   - [ ] Records #NICE 
   - [ ] Lists #REAAL NICE
   - [ ] Trees
